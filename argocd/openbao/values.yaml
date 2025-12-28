@@ -1,0 +1,32 @@
+# Default values for openbao.
+# This is a YAML file that lists values that can be configured.
+# For full list of available values, see the chart's README.
+
+replicaCount: 1
+
+# Additional configuration can be added here...
+
+ui:
+  enabled: true
+
+server:
+  affinity: ""
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    hosts:
+      - host: openbao.hnatekmar.dev
+    tls:
+      - hosts:
+          - openbao.hnatekmar.dev
+        secretName: openbao-tls
+  image:
+    repository: openbao/openbao
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  dataStorage:
+    storageClass: "nfs-client"
+    annotations:
+      nfs.io/storage-path: "openbao-hnatekmar-dev-data"
+  auditStorage:
+    storageClass: "local-path"
