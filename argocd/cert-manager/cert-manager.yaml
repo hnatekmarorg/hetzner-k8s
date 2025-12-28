@@ -14,7 +14,7 @@ spec:
       helm:
         releaseName: cert-manager
         valueFiles:
-          - $repo/devops/argocd/cert-manager/values.yaml
+          - $repo/argocd/cert-manager/values.yaml
     - repoURL: "https://github.com/hnatekmarorg/hetzner-k8s.git"
       targetRevision: main
       ref: repo
