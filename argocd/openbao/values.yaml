@@ -14,6 +14,8 @@ server:
   ingress:
     enabled: true
     ingressClassName: traefik
+    tls:
+      - secretName: bao-secret
     hosts:
       - host: bao.hnatekmar.xyz
   image:
