@@ -14,8 +14,12 @@ server:
   ingress:
     enabled: true
     ingressClassName: traefik
+    annotations:
+      cert-manager.io/issuer: letsencrypt
     tls:
       - secretName: bao-secret
+        hosts:
+          - bao.hnatekmar.xyz
     hosts:
       - host: bao.hnatekmar.xyz
   image:
