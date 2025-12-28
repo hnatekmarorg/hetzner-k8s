@@ -26,8 +26,8 @@ spec:
       helm:
         releaseName: openbao
         valueFiles:
-          - $repo/devops/argocd/openbao/values.yaml
-    - repoURL: 'https://github.com/hnatekmarorg/devops-cluster.git'
+          - $repo/argocd/openbao/values.yaml
+    - repoURL: 'https://github.com/hnatekmarorg/hetzner-k8s.git'
       targetRevision: main
       ref: repo
   destination:
