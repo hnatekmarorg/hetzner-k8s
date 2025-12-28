@@ -42,9 +42,8 @@ spec:
     privateKeySecretRef:
       name: cloudflare-issuer-key
     solvers:
-      - dns01:
-          cloudflare:
-            email: m.hnatma@gmail.com
-            apiTokenSecretRef:
-              name: cloudflare-api-token-secret
-              key: api-token
+      - http01:
+         ingress:
+           class: traefik
+
+      
