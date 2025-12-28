@@ -22,7 +22,5 @@ server:
     pullPolicy: IfNotPresent
   dataStorage:
     storageClass: "local-path"
-    annotations:
-      nfs.io/storage-path: "openbao-hnatekmar-dev-data"
   auditStorage:
     storageClass: "local-path"
