@@ -15,17 +15,13 @@ server:
     enabled: true
     ingressClassName: traefik
     hosts:
-      - host: openbao.hnatekmar.dev
-    tls:
-      - hosts:
-          - openbao.hnatekmar.dev
-        secretName: openbao-tls
+      - host: bao.hnatekmar.xyz
   image:
     repository: openbao/openbao
     tag: "latest"
     pullPolicy: IfNotPresent
   dataStorage:
-    storageClass: "nfs-client"
+    storageClass: "local-path"
     annotations:
       nfs.io/storage-path: "openbao-hnatekmar-dev-data"
   auditStorage:
