@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-base
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  sources:
+    - name: chart
+      repoURL: https://github.com/hnatekmarorg/devops-cluster.git
+      path: charts/cluster-base
+      targetRevision: main
+      helm:
+        valuesObject: {}
+    - repoURL: "https://github.com/hnatekmarorg/devops-cluster.git"
+      targetRevision: main
+      ref: repo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: inference
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - RespectIgnoreDifferences=true
+      - ServerSideApply=true
