@@ -28,22 +28,3 @@ spec:
       allowEmpty: false
     syncOptions:
       - CreateNamespace=true
----
-apiVersion: cert-manager.io/v1
-kind: ClusterIssuer
-metadata:
-  name: letsencrypt
-  annotations:
-    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
-spec:
-  acme:
-    email: m.hnatma@gmail.com
-    server: https://acme-v02.api.letsencrypt.org/directory
-    privateKeySecretRef:
-      name: cloudflare-issuer-key
-    solvers:
-      - http01:
-         ingress:
-           class: traefik
-
-      
