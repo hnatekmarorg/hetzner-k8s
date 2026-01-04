@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kong
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kong
+  namespace: argocd
+spec:
+  project: default
+  source:
+    chart: kong
+    repoURL: https://charts.konghq.com
+    targetRevision: 2.47.0
+    helm:
+      releaseName: kong
+      valuesObject:
+        podAnnotations:
+          konghq.com/plugins: prometheus
+        deployment:
+          prefixDir:
+            sizeLimit: 10Gi
+          tmpDir:
+            sizeLimit: 10Gi
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kong
+  syncPolicy:
+    automated: # automated sync by default retries failed attempts 5 times with following delays between attempts ( 5s, 10s, 20s, 40s, 80s ); retry controlled using `retry` field.
+      prune: true # Specifies if resources should be pruned during auto-syncing ( false by default ).
+      selfHeal: true # Specifies if partial app sync should be executed when resources are changed only in target Kubernetes cluster and no git change detected ( false by default ).
+      allowEmpty: false # Allows deleting all application resources during automatic syncing ( false by default ).
+    syncOptions:
+      - CreateNamespace=true
+---
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: prometheus
+  annotations:
+    kubernetes.io/ingress.class: kong
+config:
+  per_consumer: true
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+plugin: prometheus
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kong-kong-internal
+  namespace: kong
+spec:
+  type: ClusterIP
+  ports:
+    - name: kong-svc
+      port: 8100
+      protocol: TCP
+      targetPort: 8100
+  selector:
+    app.kubernetes.io/component: app
+    app.kubernetes.io/instance: kong
+    app.kubernetes.io/name: kong

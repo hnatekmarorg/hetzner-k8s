@@ -12,6 +12,7 @@ ui:
 server:
   affinity: ""
   ingress:
+    ingressClassName: "kong"
     enabled: true
     tls:
       - secretName: bao-secret
