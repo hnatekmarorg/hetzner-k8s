@@ -27,3 +27,8 @@ server:
     storageClass: "local-path"
   auditStorage:
     storageClass: "local-path"
+  certManager:
+    enabled: true
+    issuerRef:
+      kind: ClusterIssuer
+      name: letsencrypt
