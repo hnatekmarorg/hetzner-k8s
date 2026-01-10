@@ -17,6 +17,13 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
+    argocd.argoproj.io/ignore-differences: |
+      - group: admissionregistration.k8s.io
+        kind: MutatingWebhookConfiguration
+        name: openbao-agent-injector-cfg
+        jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+        - /webhooks/0/sideEffects
 spec:
   project: default
   sources:
