@@ -14,6 +14,8 @@ server:
   ingress:
     ingressClassName: "kong"
     enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
     tls:
       - secretName: bao-secret
         hosts:
