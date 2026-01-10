@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: init
+  namespace: argocd
+spec:
+  project: default
+  ignoreDifferences:
+    - kind: "*"
+      group: "*"
+      namespace: default
+      jsonPointers:
+        - /spec/replicas
+  syncPolicy:
+    syncOptions:
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+    automated:
+      selfHeal: true
+      prune: true
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: argocd
+  source:
+    directory:
+      recurse: true
+    repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+    targetRevision: HEAD
+    path: argocd/applications
