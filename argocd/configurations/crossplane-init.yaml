@@ -8,6 +8,8 @@ metadata:
 spec:
   project: default
   source:
+    directory:
+      recurse: true
     repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
     targetRevision: HEAD
     path: crossplane/init
@@ -31,6 +33,8 @@ metadata:
 spec:
   project: default
   source:
+    directory:
+      recurse: true
     repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
     targetRevision: HEAD
     path: crossplane/config
