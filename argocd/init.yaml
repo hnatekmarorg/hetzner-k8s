@@ -26,4 +26,4 @@ spec:
       recurse: true
     repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
     targetRevision: HEAD
-    path: argocd/applications
+    path: argocd/
