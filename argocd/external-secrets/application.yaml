@@ -6,11 +6,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://external-secrets.github.io/kubernetes-external-secrets/
-    chart: kubernetes-external-secrets
+    repoURL: https://charts.external-secrets.io
+    chart: external-secrets
     targetRevision: 1.2.1
     helm:
-      releaseName: kubernetes-external-secrets
+      releaseName: external-secrets
       valuesObject:
         installCRDs: true
   destination:
