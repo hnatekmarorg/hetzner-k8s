@@ -1,78 +1,79 @@
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: keycloakx
-  namespace: argocd
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
-spec:
-  project: default
-  source:
-    repoURL: https://codecentric.github.io/helm-charts
-    chart: keycloakx
-    targetRevision: 7.1.5
-    helm:
-      valuesObject:
-        command:
-          - "/opt/keycloak/bin/kc.sh"
-          - "start"
-          - "--http-port=8080"
-          - "--hostname-strict=false"
-          - "--proxy=edge"
-
-        ingress:
-          enabled: true
-          ingressClassName: kong
-          annotations:
-            cert-manager.io/cluster-issuer: letsencrypt-prod
-          rules:
-            - host: sso.hnatekmar.xyz
-              paths:
-                - path: /
-                  pathType: Prefix
-          tls:
-            - hosts:
-                - sso.hnatekmar.xyz
-              secretName: sso-tls-secret
-
-        # Worker Node Scheduling
-        tolerations:
-          - key: node-role.kubernetes.io/control-plane
-            operator: Exists
-            effect: NoSchedule
-          - key: node-role.kubernetes.io/master
-            operator: Exists
-            effect: NoSchedule
-
-        # Environment Variables & Secrets
-        extraEnv:
-          - name: KC_HOSTNAME
-            value: "sso.hnatekmar.xyz"
-
-          - name: KEYCLOAK_ADMIN
-            valueFrom:
-              secretKeyRef:
-                name: keycloak-admin-creds
-                key: username
-          - name: KEYCLOAK_ADMIN_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: keycloak-admin-creds
-                key: password
-
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: keycloak
-
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-    retry:
-      limit: 5
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 3m
+# # TODO: after openbao integration I need to enable this
+# apiVersion: argoproj.io/v1alpha1
+# kind: Application
+# metadata:
+#   name: keycloakx
+#   namespace: argocd
+#   annotations:
+#     argocd.argoproj.io/sync-wave: "1"
+# spec:
+#   project: default
+#   source:
+#     repoURL: https://codecentric.github.io/helm-charts
+#     chart: keycloakx
+#     targetRevision: 7.1.5
+#     helm:
+#       valuesObject:
+#         command:
+#           - "/opt/keycloak/bin/kc.sh"
+#           - "start"
+#           - "--http-port=8080"
+#           - "--hostname-strict=false"
+#           - "--proxy=edge"
+#
+#         ingress:
+#           enabled: true
+#           ingressClassName: kong
+#           annotations:
+#             cert-manager.io/cluster-issuer: letsencrypt-prod
+#           rules:
+#             - host: sso.hnatekmar.xyz
+#               paths:
+#                 - path: /
+#                   pathType: Prefix
+#           tls:
+#             - hosts:
+#                 - sso.hnatekmar.xyz
+#               secretName: sso-tls-secret
+#
+#         # Worker Node Scheduling
+#         tolerations:
+#           - key: node-role.kubernetes.io/control-plane
+#             operator: Exists
+#             effect: NoSchedule
+#           - key: node-role.kubernetes.io/master
+#             operator: Exists
+#             effect: NoSchedule
+#
+#         # Environment Variables & Secrets
+#         extraEnv:
+#           - name: KC_HOSTNAME
+#             value: "sso.hnatekmar.xyz"
+#
+#           - name: KEYCLOAK_ADMIN
+#             valueFrom:
+#               secretKeyRef:
+#                 name: keycloak-admin-creds
+#                 key: username
+#           - name: KEYCLOAK_ADMIN_PASSWORD
+#             valueFrom:
+#               secretKeyRef:
+#                 name: keycloak-admin-creds
+#                 key: password
+#
+#   destination:
+#     server: https://kubernetes.default.svc
+#     namespace: keycloak
+#
+#   syncPolicy:
+#     automated:
+#       prune: true
+#       selfHeal: true
+#     syncOptions:
+#       - CreateNamespace=true
+#     retry:
+#       limit: 5
+#       backoff:
+#         duration: 5s
+#         factor: 2
+#         maxDuration: 3m
