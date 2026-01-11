@@ -17,14 +17,13 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "-1"
-    argocd.argoproj.io/ignore-differences: |
-      - group: admissionregistration.k8s.io
-        kind: MutatingWebhookConfiguration
-        name: openbao-agent-injector-cfg
-        jsonPointers:
-        - /webhooks/0/clientConfig/caBundle
-        - /webhooks/0/sideEffects
 spec:
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      name: openbao-agent-injector-cfg
+      jqPathExpressions:
+        - .webhooks[].clientConfig.caBundle
   project: default
   sources:
     - chart: openbao
@@ -34,7 +33,7 @@ spec:
         releaseName: openbao
         valueFiles:
           - $repo/argocd/openbao/values.yaml
-    - repoURL: 'https://github.com/hnatekmarorg/hetzner-k8s.git'
+    - repoURL: "https://github.com/hnatekmarorg/hetzner-k8s.git"
       targetRevision: main
       ref: repo
   destination:
