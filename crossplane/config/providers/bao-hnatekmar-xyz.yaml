@@ -3,7 +3,10 @@ kind: ProviderConfig
 metadata:
   name: bao-hnatekmar-xyz
 spec:
-  address: http://openbao.openbao-system.svc.cluster.local:8200
+  address: https://bao.hnatekmar.xyz
   credentials:
-    source: Kubernetes
-  role: vaultRole
+    source: Secret
+    secretRef:
+      name: openbao-hnatekmar-xyz
+      namespace: crossplane-system
+      key: config

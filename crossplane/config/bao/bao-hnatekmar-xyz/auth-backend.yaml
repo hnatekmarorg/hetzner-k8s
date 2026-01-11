@@ -1,0 +1,21 @@
+apiVersion: auth.vault.upbound.io/v1alpha1
+kind: Backend
+metadata:
+  name: bao-hnatekmar-xyz
+spec:
+  forProvider:
+    type: kubernetes
+    path: kubernetes
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+---
+apiVersion: kubernetes.vault.upbound.io/v1alpha1
+kind: AuthBackendConfig
+metadata:
+  name: bao-hnatekmar-xyz
+spec:
+  forProvider:
+    backend: kubernetes
+    kubernetesHost: "https://kubernetes.default.svc"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
