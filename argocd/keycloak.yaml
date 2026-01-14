@@ -50,7 +50,7 @@ spec:
             value: "xforwarded"
 
           - name: KC_HTTP_ENABLED
-            value: true
+            value: "true"
 
           - name: KC_HTTP_RELATIVE_PATH
             value: "/"
