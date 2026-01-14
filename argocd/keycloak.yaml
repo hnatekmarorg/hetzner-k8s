@@ -43,7 +43,7 @@ spec:
             operator: Exists
             effect: NoSchedule
 
-        extraEnv:
+        extraEnv: |
           - name: KC_HOSTNAME
             value: "sso.hnatekmar.xyz"
 
