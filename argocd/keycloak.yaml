@@ -18,7 +18,6 @@ spec:
           - "start"
           - "--http-port=8080"
           - "--hostname-strict=false"
-          - "--proxy=edge"
 
         ingress:
           enabled: true
@@ -47,8 +46,11 @@ spec:
           - name: KC_HOSTNAME
             value: "https://sso.hnatekmar.xyz"
 
-          - name: KC_PROXY
-            value: "edge"
+          - name: KC_PROXY_HEADERS
+            value: "xforwarded"
+
+          - name: KC_HTTP_ENABLED
+            value: true
 
           - name: KC_HTTP_RELATIVE_PATH
             value: "/"
