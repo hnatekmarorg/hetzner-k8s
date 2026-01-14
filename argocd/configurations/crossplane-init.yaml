@@ -57,6 +57,11 @@ metadata:
     argocd.argoproj.io/sync-wave: "4"
 spec:
   project: default
+  ignoreDifferences:
+    - group: external-secrets.io
+      kind: ExternalSecret
+      jsonPointers:
+        - /spec/data
   source:
     directory:
       recurse: true

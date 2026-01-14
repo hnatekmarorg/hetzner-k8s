@@ -18,7 +18,6 @@ spec:
           - "start"
           - "--http-port=8080"
           - "--hostname-strict=false"
-          - "--proxy=edge"
 
         ingress:
           enabled: true
