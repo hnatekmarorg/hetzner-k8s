@@ -57,6 +57,9 @@ spec:
                 name: keycloak-admin-creds
                 key: password
 
+          - name: JAVA_OPTS_APPEND
+            value: >-
+              -Djgroups.dns.query={{ include "keycloak.fullname" . }}-headless
   destination:
     server: https://kubernetes.default.svc
     namespace: keycloak
