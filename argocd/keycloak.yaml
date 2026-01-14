@@ -18,6 +18,8 @@ spec:
           - "start"
           - "--http-port=8080"
           - "--hostname-strict=false"
+          - "--proxy-headers=xforwarded"
+          - "--http-enabled=true"
 
         ingress:
           enabled: true
@@ -49,7 +51,9 @@ spec:
           - name: KC_PROXY_HEADERS
             value: "xforwarded"
 
-          - name: KC_HTTP_ENABLED
+          - name: KC_HEALTH_ENABLED
+            value: "true"
+          - name: KC_METRICS_ENABLED
             value: "true"
 
           - name: KC_BOOTSTRAP_ADMIN_USERNAME
@@ -62,6 +66,7 @@ spec:
               secretKeyRef:
                 name: keycloak-admin-creds
                 key: password
+          - name: -proxy-headers xforwarded --http-enabled true
 
           - name: JAVA_OPTS_APPEND
             value: >-
