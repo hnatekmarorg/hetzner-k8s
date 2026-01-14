@@ -13,6 +13,8 @@ spec:
     targetRevision: 7.1.5
     helm:
       valuesObject:
+        http:
+          relativePath: "/"
         command:
           - "/opt/keycloak/bin/kc.sh"
           - "start"
@@ -20,8 +22,6 @@ spec:
           - "--hostname-strict=false"
           - "--proxy-headers=xforwarded"
           - "--http-enabled=true"
-          - --set-string
-          - http.relativePath=/
 
         ingress:
           enabled: true
