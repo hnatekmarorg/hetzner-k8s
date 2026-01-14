@@ -47,3 +47,28 @@ spec:
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane-secrets
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  project: default
+  source:
+    directory:
+      recurse: true
+    repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+    targetRevision: HEAD
+    path: crossplane/secrets
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
