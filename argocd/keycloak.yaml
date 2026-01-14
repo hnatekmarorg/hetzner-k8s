@@ -20,6 +20,8 @@ spec:
           - "--hostname-strict=false"
           - "--proxy-headers=xforwarded"
           - "--http-enabled=true"
+          - --set-string
+          - http.relativePath=/
 
         ingress:
           enabled: true
