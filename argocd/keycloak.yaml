@@ -52,9 +52,6 @@ spec:
           - name: KC_HTTP_ENABLED
             value: "true"
 
-          - name: KC_HTTP_RELATIVE_PATH
-            value: "/"
-
           - name: KC_BOOTSTRAP_ADMIN_USERNAME
             valueFrom:
               secretKeyRef:
