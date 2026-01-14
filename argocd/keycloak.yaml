@@ -44,7 +44,7 @@ spec:
 
         extraEnv: |
           - name: KC_HOSTNAME
-            value: "sso.hnatekmar.xyz"
+            value: "https://sso.hnatekmar.xyz"
 
           - name: KC_BOOTSTRAP_ADMIN_USERNAME
             valueFrom:
