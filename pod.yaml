@@ -1,0 +1,26 @@
+# https://kubernetes.io/docs/concepts/workloads/pods/
+apiVersion: v1
+kind: Pod
+metadata:
+  name: external-sa-pod
+  namespace: external-secrets
+spec:
+  serviceAccountName: external-secrets
+  containers:
+    - name: myapp
+      image: "openbao/openbao:2"
+      env:
+        - name: VAULT_ADDR
+          value: "https://bao.hnatekmar.xyz"
+      args:
+        - /bin/sh
+        - -c
+        - sleep infinity
+      resources:
+        limits:
+          cpu: 200m
+          memory: 500Mi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+  restartPolicy: Always

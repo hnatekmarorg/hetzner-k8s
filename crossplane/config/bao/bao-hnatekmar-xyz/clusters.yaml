@@ -1,0 +1,12 @@
+# kv-v2 mount for all clusters
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: clusters
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    path: clusters
+    type: kv-v2
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
