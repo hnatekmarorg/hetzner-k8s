@@ -1,0 +1,39 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: sso-hnatekmar-xyz
+  namespace: crossplane-system
+spec:
+  refreshInterval: "15s"
+  secretStoreRef:
+    name: local
+    kind: ClusterSecretStore
+  target:
+    name: sso-hnatekmar-xyz
+    template:
+      engineVersion: v2
+      data:
+        config: |
+          {
+            "url": "https://sso.hnatekmar.xyz",
+            "username": "{{ .username }}",
+            "password": "{{ .password }}"
+          }
+  data:
+    - secretKey: username
+      remoteRef:
+        key: /admin/keycloak
+        property: username
+    - secretKey: password
+      remoteRef:
+        key: /admin/keycloak
+        property: password
+---
+apiVersion: keycloak.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: sso-hnatekmar-xyz
+spec:
+  credentialsSecretRef:
+    name: sso-hnatekmar-xyz
+    key: config
