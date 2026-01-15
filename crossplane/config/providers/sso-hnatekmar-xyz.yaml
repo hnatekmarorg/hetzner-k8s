@@ -16,6 +16,7 @@ spec:
         config: |
           {
             "url": "https://sso.hnatekmar.xyz",
+            "client_id": "admin-cli",
             "username": "{{ .username }}",
             "password": "{{ .password }}"
           }
