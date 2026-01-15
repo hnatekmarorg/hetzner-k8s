@@ -20,7 +20,7 @@ spec:
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: bao-hnatekmar-xyz
+  name: sso
   namespace: crossplane-system
 spec:
   providerConfigRef:
