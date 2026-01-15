@@ -33,7 +33,11 @@ apiVersion: keycloak.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: sso-hnatekmar-xyz
+  namespace: crossplane-system
 spec:
-  credentialsSecretRef:
-    name: sso-hnatekmar-xyz
-    key: config
+  credentials:
+    secretRef:
+      name: sso-hnatekmar-xyz
+      key: config
+      namespace: crossplane-system
+    source: Secret
