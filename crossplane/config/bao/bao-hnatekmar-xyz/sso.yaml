@@ -7,7 +7,7 @@ spec:
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    path: sso
+    path: oidc
     type: oidc
     defaultRole: sso
     oidcClientId: bao-hnatekmar-xyz
