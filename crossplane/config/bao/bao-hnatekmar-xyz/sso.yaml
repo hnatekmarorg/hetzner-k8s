@@ -9,7 +9,7 @@ spec:
   forProvider:
     path: sso
     type: oidc
-    defaultRole: default
+    defaultRole: sso
     oidcClientId: bao-hnatekmar-xyz
     oidcClientSecretSecretRef:
       key: attribute.client_secret
@@ -33,6 +33,6 @@ spec:
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: default
+    roleName: sso
     roleType: oidc
     tokenPolicies: []
