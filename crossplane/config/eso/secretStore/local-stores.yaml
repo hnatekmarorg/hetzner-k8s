@@ -1,0 +1,36 @@
+# Stores that refer to local openbao instance
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: local
+spec:
+  provider:
+    vault:
+      server: https://bao.hnatekmar.xyz
+      path: "clusters"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          serviceAccountRef:
+            name: external-secrets
+            namespace: external-secrets
+          role: "bao-hnatekmar-xyz"
+---
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: local-algovectra
+spec:
+  provider:
+    vault:
+      server: https://bao.hnatekmar.xyz
+      path: "algovectra"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          serviceAccountRef:
+            name: external-secrets
+            namespace: external-secrets
+          role: "bao-hnatekmar-xyz"
