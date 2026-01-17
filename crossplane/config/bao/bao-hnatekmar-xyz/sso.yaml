@@ -29,7 +29,6 @@ spec:
     backendRef:
       name: sso
     userClaim: email
-    groupsClaim: groups
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
