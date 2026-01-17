@@ -34,4 +34,5 @@ spec:
       - http://localhost:8250/oidc/callback
     roleName: sso
     roleType: oidc
-    tokenPolicies: []
+    tokenPolicies:
+      - algovectra

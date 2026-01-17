@@ -1,0 +1,11 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: algovectra
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    path: algovectra
+    type: kv-v2
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
