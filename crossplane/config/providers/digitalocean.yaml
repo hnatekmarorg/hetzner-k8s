@@ -21,7 +21,7 @@ spec:
   data:
     - secretKey: token
       remoteRef:
-        key: /algovectra/digitalocean
+        key: /digitalocean
         property: token
 ---
 apiVersion: digitalocean.crossplane.io/v1beta1
