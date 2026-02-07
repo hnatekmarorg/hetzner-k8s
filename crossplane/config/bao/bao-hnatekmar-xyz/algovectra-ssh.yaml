@@ -1,0 +1,12 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: algovectra-ssh
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    path: algovectra-ssh
+    type: ssh
+    description: "SSH Secret Engine for Algovectra managed by Crossplane"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

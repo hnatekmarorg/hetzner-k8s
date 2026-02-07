@@ -1,0 +1,21 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendRole
+metadata:
+  name: algovectra-ssh-ca-role
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: "algovectra"
+    backend: algovectra-ssh
+    keyType: "ca"
+    defaultUser: "root"
+    cidrList: "0.0.0.0/0"
+    allowedUsers: "*"
+    ttl: "720h"
+    maxTtl: "720h"
+    allowUserCertificates: true
+    allowedExtensions: "permit-pty"
+    defaultExtensions:
+      "permit-pty": ""
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

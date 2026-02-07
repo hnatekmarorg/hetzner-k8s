@@ -1,0 +1,17 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: algovectra-ssh
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    name: algovectra-ssh
+    policy: |
+      path "algovectra-ssh/*" {
+        capabilities = ["read", "list", "create", "update"]
+      }
+      path "algovectra-ssh/sign/*" {
+        capabilities = ["create", "update"]
+      }

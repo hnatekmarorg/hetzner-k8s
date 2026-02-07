@@ -1,0 +1,11 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendCA
+metadata:
+  name: algovectra-ssh-ca
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    backend: algovectra-ssh
+    generateSigningKey: true
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
