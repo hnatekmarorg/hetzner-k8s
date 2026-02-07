@@ -1,0 +1,64 @@
+apiVersion: kubernetes.digitalocean.crossplane.io/v1alpha1
+kind: Cluster
+metadata:
+  name: cluster-0
+spec:
+  writeConnectionSecretToRef:
+    name: cluster-0
+    namespace: crossplane-system
+  providerConfigRef:
+    name: digitalocean
+  forProvider:
+    name: cluster-0
+    region: fra1
+    version: "1.34.1-do.2"
+    nodePool:
+      - autoScale: true
+        minNodes: 1
+        maxNodes: 3
+        size: s-2vcpu-4gb
+        name: static-pool
+    tags:
+      - crossplane
+---
+apiVersion: auth.vault.upbound.io/v1alpha1
+kind: Backend
+metadata:
+  name: cluster-0
+spec:
+  forProvider:
+    type: kubernetes
+    path: cluster-0
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+---
+apiVersion: kubernetes.vault.upbound.io/v1alpha1
+kind: AuthBackendConfig
+metadata:
+  name: bao-hnatekmar-xyz
+spec:
+  forProvider:
+    backendRef:
+      name: bao-hnatekmar-xyz
+    kubernetesHost: "https://kubernetes.default.svc"
+    disableIssValidation: true
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+---
+apiVersion: kubernetes.vault.upbound.io/v1alpha1
+kind: AuthBackendRole
+metadata:
+  name: bao-hnatekmar-xyz
+spec:
+  forProvider:
+    backendRef:
+      name: bao-hnatekmar-xyz
+    roleName: bao-hnatekmar-xyz
+    boundServiceAccountNames:
+      - external-secrets
+    boundServiceAccountNamespaces:
+      - external-secrets
+    tokenPolicies:
+      - clusters-secret-creator
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
