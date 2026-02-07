@@ -17,8 +17,7 @@ spec:
     roleType: oidc
     groupsClaim: groups
     oidcScopes:
-      - "email"
-      - "basic"
+      - "openid"
       - "microprofile-jwt"
     boundClaims:
       groups: "default-roles-master"
