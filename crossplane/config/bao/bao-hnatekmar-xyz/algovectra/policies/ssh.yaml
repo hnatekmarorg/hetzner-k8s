@@ -2,6 +2,7 @@ apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
   name: algovectra-ssh
+  namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:

@@ -1,20 +1,15 @@
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: clusters-secret-creator
+  name: algovectra-main
+  namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: clusters-secret-creator
+    name: algovectra
     policy: |
-      path "clusters/data/admin/*" {
-        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
-      }
-      path "clusters/metadata/admin/*" {
-        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
-      }
       path "algovectra/data/*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
       }

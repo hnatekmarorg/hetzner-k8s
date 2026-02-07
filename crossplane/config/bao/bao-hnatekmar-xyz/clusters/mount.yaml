@@ -1,11 +1,13 @@
+# kv-v2 mount for all clusters
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Mount
 metadata:
-  name: algovectra
+  name: clusters
+  namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   forProvider:
-    path: algovectra
+    path: clusters
     type: kv-v2
   providerConfigRef:
     name: bao-hnatekmar-xyz

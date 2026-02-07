@@ -1,23 +1,4 @@
 apiVersion: jwt.vault.upbound.io/v1alpha1
-kind: AuthBackend
-metadata:
-  name: sso
-  namespace: crossplane-system
-spec:
-  providerConfigRef:
-    name: bao-hnatekmar-xyz
-  forProvider:
-    path: oidc
-    type: oidc
-    defaultRole: sso
-    oidcClientId: bao-hnatekmar-xyz
-    oidcClientSecretSecretRef:
-      key: attribute.client_secret
-      namespace: crossplane-system
-      name: bao-hnatekmar-xyz
-    oidcDiscoveryUrl: https://sso.hnatekmar.xyz/realms/master
----
-apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
   name: sso

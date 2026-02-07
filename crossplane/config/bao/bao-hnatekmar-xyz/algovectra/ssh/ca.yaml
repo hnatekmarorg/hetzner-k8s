@@ -2,6 +2,7 @@ apiVersion: ssh.vault.upbound.io/v1alpha1
 kind: SecretBackendCA
 metadata:
   name: algovectra-ssh-ca
+  namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   forProvider:

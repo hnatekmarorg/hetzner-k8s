@@ -1,0 +1,13 @@
+apiVersion: kubernetes.vault.upbound.io/v1alpha1
+kind: AuthBackendConfig
+metadata:
+  name: bao-hnatekmar-xyz
+  namespace: crossplane-system
+spec:
+  forProvider:
+    backendRef:
+      name: bao-hnatekmar-xyz
+    kubernetesHost: "https://kubernetes.default.svc"
+    disableIssValidation: true
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

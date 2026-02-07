@@ -1,17 +1,15 @@
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: algovectra
+  name: sso-admin-identity
+  namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: algovectra
+    name: sso-admin-identity
     policy: |
-      path "algovectra/data/*" {
-        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
-      }
-      path "algovectra/metadata/*" {
+      path "*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
       }

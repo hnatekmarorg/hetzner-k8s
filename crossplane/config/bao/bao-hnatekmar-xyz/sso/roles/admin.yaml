@@ -1,0 +1,22 @@
+apiVersion: jwt.vault.upbound.io/v1alpha1
+kind: AuthBackendRole
+metadata:
+  name: sso-admin
+  namespace: crossplane-system
+spec:
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    backendRef:
+      name: sso
+    userClaim: email
+    allowedRedirectUris:
+      - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
+      - http://localhost:8250/oidc/callback
+    roleName: sso-admin
+    roleType: oidc
+    boundClaimsType: glob
+    boundClaims:
+      groups: "*default-roles-master*"
+    tokenPolicies:
+      - sso-admin-identity

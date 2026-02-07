@@ -1,0 +1,18 @@
+apiVersion: kubernetes.vault.upbound.io/v1alpha1
+kind: AuthBackendRole
+metadata:
+  name: bao-hnatekmar-xyz
+  namespace: crossplane-system
+spec:
+  forProvider:
+    backendRef:
+      name: bao-hnatekmar-xyz
+    roleName: bao-hnatekmar-xyz
+    boundServiceAccountNames:
+      - external-secrets
+    boundServiceAccountNamespaces:
+      - external-secrets
+    tokenPolicies:
+      - clusters-secret-creator
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
