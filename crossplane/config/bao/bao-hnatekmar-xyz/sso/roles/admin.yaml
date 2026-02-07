@@ -16,7 +16,12 @@ spec:
     roleName: sso-admin
     roleType: oidc
     boundClaimsType: glob
+    groupsClaim: groups
+    oidcScopes:
+      - "email"
+      - "basic"
+      - "microprofile-jwt"
     boundClaims:
-      groups: "*default-roles-master*"
+      groups: ["default-roles-master"]
     tokenPolicies:
       - sso-admin-identity
