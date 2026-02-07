@@ -20,6 +20,6 @@ spec:
       - "openid"
       - "microprofile-jwt"
     boundClaims:
-      groups: "default-roles-master"
+      groups: "*admin*"
     tokenPolicies:
       - sso-admin-identity
