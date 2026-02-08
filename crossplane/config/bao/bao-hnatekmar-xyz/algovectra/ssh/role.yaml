@@ -18,5 +18,6 @@ spec:
     allowedExtensions: "permit-pty"
     defaultExtensions:
       "permit-pty": ""
+      "permit-port-forwarding": ""
   providerConfigRef:
     name: bao-hnatekmar-xyz
