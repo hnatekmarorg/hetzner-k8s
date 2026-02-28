@@ -14,5 +14,9 @@ spec:
       - external-secrets
     tokenPolicies:
       - clusters-secret-creator
+    # Token TTL limits to prevent accumulation
+    tokenTtl: "30m"
+    tokenMaxTtl: "1h"
+    tokenType: "service"
   providerConfigRef:
     name: bao-hnatekmar-xyz

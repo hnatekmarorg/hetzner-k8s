@@ -30,3 +30,18 @@ server:
     storageClass: "local-path"
   auditStorage:
     storageClass: "local-path"
+  # Token configuration to prevent inode exhaustion
+  extraConfig: |
+    # Token TTL limits
+    default_lease_ttl = "1h"
+    max_lease_ttl = "24h"
+    
+    # Token cleanup configuration
+    token {
+      # Allow token renewal but with limits
+      allowed_response_wrapping_ttl = "5m"
+      # Default TTL for tokens without explicit TTL
+      default_ttl = "1h"
+      # Maximum TTL for any token
+      max_ttl = "24h"
+    }

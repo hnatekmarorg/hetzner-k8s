@@ -23,3 +23,7 @@ spec:
       groups: "admin"
     tokenPolicies:
       - sso-admin-identity
+    # Token TTL limits for admin tokens
+    tokenTtl: "24h"
+    tokenMaxTtl: "24h"
+    tokenType: "service"
