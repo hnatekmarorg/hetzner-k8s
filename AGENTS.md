@@ -209,6 +209,75 @@ argocd app rollback <app-name> <revision>
 
 2. **Compositions**: Organize by service type (auth, clusters, ssh, etc.)
 
+3. **Keycloak Client Configuration**:
+   
+   **Location**: `crossplane/config/keycloak/clients/<client-name>.yaml`
+   
+   **PKCE Client (for CLI support)**:
+   ```yaml
+   apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+   kind: Client
+   metadata:
+     name: <client-name>
+     annotations:
+       argocd.argoproj.io/sync-wave: "2"
+   spec:
+     writeConnectionSecretToRef:
+       namespace: crossplane-system
+       name: <client-name>-oidc-creds
+     providerConfigRef:
+       name: sso-hnatekmar-xyz
+     forProvider:
+       accessType: PUBLIC
+       clientId: <client-name>
+       standardFlowEnabled: true
+       directAccessGrantsEnabled: true
+       enabled: true
+       realmId: master
+       webOrigins:
+         - https://<client-domain>
+       validRedirectUris:
+         - https://<client-domain>/auth/callback
+         - http://localhost:8085/auth/callback
+       pkceCodeChallengeMethod: S256
+   ```
+   
+   **CONFIDENTIAL Client (server-to-server)**:
+   ```yaml
+   apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+   kind: Client
+   metadata:
+     name: <client-name>
+   spec:
+     writeConnectionSecretToRef:
+       namespace: crossplane-system
+       name: <client-name>-creds
+     providerConfigRef:
+       name: sso-hnatekmar-xyz
+     forProvider:
+       accessType: CONFIDENTIAL
+       clientId: <client-name>
+       standardFlowEnabled: true
+       enabled: true
+       realmId: master
+       webOrigins:
+         - https://<client-domain>
+       validRedirectUris:
+         - https://<client-domain>/auth/callback
+   ```
+   
+   **Example Integration with ArgoCD**:
+   ```yaml
+   configs:
+     cm:
+       oidc.config: |
+         name: Keycloak
+         issuer: https://sso.hnatekmar.xyz/realms/master
+         clientID: <client-name>
+         clientSecret: $<client-name>-oidc-creds:clientSecret
+         enablePKCEAuthentication: true
+   ```
+
 ### Error Handling
 
 1. **Resource Limits**: Always specify for production workloads

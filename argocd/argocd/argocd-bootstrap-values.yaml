@@ -1,0 +1,177 @@
+---
+# ArgoCD Helm Values - External Access with Keycloak SSO
+# Domain: argocd-bootstrap.hnatekmar.xyz
+
+global:
+  domain: argocd-bootstrap.hnatekmar.xyz
+  image:
+    repository: quay.io/argoproj/argocd
+    tag: latest
+    imagePullPolicy: IfNotPresent
+  additionalLabels:
+    app.kubernetes.io/part-of: argocd
+  securityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    fsGroup: 999
+
+# ArgoCD ConfigMap
+configs:
+  cm:
+    create: true
+    url: https://argocd-bootstrap.hnatekmar.xyz
+    admin.enabled: "false"
+    timeout.reconciliation: 180s
+    application.instanceLabelKey: argocd.argoproj.io/instance
+
+    # OIDC Configuration with Keycloak (PKCE for CLI support)
+    # Client secret referenced from Crossplane-managed secret
+    oidc.config: |
+      name: Keycloak
+      issuer: https://sso.hnatekmar.xyz/realms/master
+      clientID: argocd-bootstrap
+      enablePKCEAuthentication: true
+      refreshTokenThreshold: 2m
+      clientSecret: $argocd-bootstrap-oidc-creds:clientSecret
+      requestedScopes: ["openid", "profile", "email", "groups"]
+      requestedIDTokenClaims:
+        groups:
+          essential: true
+
+    # RBAC Policy - Default to read-only for authenticated users
+    policy.default: role:readonly
+    policy.csv: |
+      g, ArgoCDAdmins, role:admin
+      g, Developers, role:developer
+      g, Operators, role:operator
+
+  params:
+    server.insecure: false
+
+  secret:
+    create: true
+
+  rbac:
+    create: true
+    policy.default: role:readonly
+    policy.csv: |
+      g, ArgoCDAdmins, role:admin
+      g, Developers, role:developer
+      g, Operators, role:operator
+
+# Server configuration
+server:
+  # Ingress configuration using cert-manager (like other services)
+  ingress:
+    enabled: true
+    ingressClassName: kong
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      # SSL passthrough for gRPC support
+      konghq.com/protocol: https
+    tls: true
+    hostname: argocd-bootstrap.hnatekmar.xyz
+
+  service:
+    type: ClusterIP
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Disable built-in certificate (using cert-manager via ingress)
+  certificate:
+    enabled: false
+
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# Controller
+controller:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# Repository server
+repoServer:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# ApplicationSet
+applicationSet:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# Redis (single instance, not HA)
+redis:
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+# HA disabled for single-node setup
+redis-ha:
+  enabled: false
+
+# CRDs
+crds:
+  install: true
+  keep: true
