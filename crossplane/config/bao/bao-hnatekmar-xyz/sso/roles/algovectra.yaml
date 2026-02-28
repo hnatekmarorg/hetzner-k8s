@@ -19,6 +19,6 @@ spec:
       - algovectra
       - algovectra-ssh
     # Token TTL limits for user tokens
-    tokenTtl: "1h"
-    tokenMaxTtl: "4h"
+    tokenTtl: 3600
+    tokenMaxTtl: 14400
     tokenType: "service"

@@ -15,8 +15,8 @@ spec:
     tokenPolicies:
       - clusters-secret-creator
     # Token TTL limits to prevent accumulation
-    tokenTtl: "30m"
-    tokenMaxTtl: "1h"
+    tokenTtl: 1800
+    tokenMaxTtl: 3600
     tokenType: "service"
   providerConfigRef:
     name: bao-hnatekmar-xyz

@@ -24,6 +24,6 @@ spec:
     tokenPolicies:
       - sso-admin-identity
     # Token TTL limits for admin tokens
-    tokenTtl: "24h"
-    tokenMaxTtl: "24h"
+    tokenTtl: 86400
+    tokenMaxTtl: 86400
     tokenType: "service"
