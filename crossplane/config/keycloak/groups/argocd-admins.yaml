@@ -13,7 +13,3 @@ spec:
   forProvider:
     name: ArgoCDAdmins
     realmId: master
-    # Description for the group
-    attributes:
-      description:
-        - "Administrators with full access to ArgoCD"
