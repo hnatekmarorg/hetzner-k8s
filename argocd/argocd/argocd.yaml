@@ -47,17 +47,16 @@ spec:
               clientID: argocd-bootstrap
               enablePKCEAuthentication: true
               refreshTokenThreshold: 2m
-              requestedScopes: ["openid", "email", "profile"]
+              requestedScopes: ["openid", "email", "profile", "groups"]
               requestedIDTokenClaims:
                 groups:
                   essential: false
 
             # RBAC Policy - Default to read-only for authenticated users
+            # Only users in ArgoCDAdmins group get admin access
             policy.default: role:readonly
             policy.csv: |
               g, ArgoCDAdmins, role:admin
-              g, Developers, role:developer
-              g, Operators, role:operator
 
           params:
             # Ingress handles SSL, ArgoCD runs HTTP internally
@@ -71,8 +70,6 @@ spec:
             policy.default: role:readonly
             policy.csv: |
               g, ArgoCDAdmins, role:admin
-              g, Developers, role:developer
-              g, Operators, role:operator
 
         # Server configuration
         server:

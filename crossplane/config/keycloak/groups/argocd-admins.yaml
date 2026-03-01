@@ -1,0 +1,19 @@
+---
+# Keycloak Group for ArgoCD Administrators
+# Users added to this group will have admin access to ArgoCD
+apiVersion: group.keycloak.crossplane.io/v1alpha1
+kind: Group
+metadata:
+  name: argocd-admins
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    name: ArgoCDAdmins
+    realmId: master
+    # Description for the group
+    attributes:
+      description:
+        - "Administrators with full access to ArgoCD"
