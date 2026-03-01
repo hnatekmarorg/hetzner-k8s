@@ -11,6 +11,11 @@ spec:
       namespace: default
       jsonPointers:
         - /spec/replicas
+    # Ignore status field changes in ExternalSecrets (refreshTime, syncedResourceVersion update every 15s)
+    - kind: ExternalSecret
+      group: external-secrets.io
+      jsonPointers:
+        - /status
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
