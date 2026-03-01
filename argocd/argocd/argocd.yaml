@@ -79,15 +79,12 @@ spec:
           # Ingress configuration using cert-manager (like other services)
           ingress:
             enabled: true
-            ingressClassName: nginx
+            ingressClassName: kong
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
-              nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
-            extraTls:
-              - hosts:
-                - argocd-bootstrap.hnatekmar.xyz
-                secretName: argocd-bootstrap-server-tls
+              konghq.com/strip-path: "false"
+            tls: true
+            hostname: argocd-bootstrap.hnatekmar.xyz
 
           service:
             type: ClusterIP
