@@ -61,7 +61,8 @@ spec:
               g, Operators, role:operator
 
           params:
-            server.insecure: false
+            # Ingress handles SSL, ArgoCD runs HTTP internally
+            server.insecure: true
 
           secret:
             create: true
@@ -82,8 +83,8 @@ spec:
             ingressClassName: kong
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
-              # SSL passthrough for gRPC support
-              konghq.com/protocol: https
+              # Ingress handles SSL, backend uses HTTP
+              konghq.com/strip-path: "false"
             tls: true
             hostname: argocd-bootstrap.hnatekmar.xyz
 
