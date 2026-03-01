@@ -24,9 +24,11 @@ spec:
     realmId: master
 
     # Redirect URIs for web and CLI
+    # ArgoCD uses /api/dex/callback for OIDC
     webOrigins:
       - https://argocd-bootstrap.hnatekmar.xyz
+      - +
     validRedirectUris:
-      - https://argocd-bootstrap.hnatekmar.xyz/auth/callback
-      - http://localhost:8085/auth/callback
+      - https://argocd-bootstrap.hnatekmar.xyz/api/dex/callback
+      - http://localhost:8085/api/dex/callback
       - http://localhost:*

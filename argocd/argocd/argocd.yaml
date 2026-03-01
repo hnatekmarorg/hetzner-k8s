@@ -40,14 +40,13 @@ spec:
             application.instanceLabelKey: argocd.argoproj.io/instance
 
             # OIDC Configuration with Keycloak (PKCE for CLI support)
-            # Client secret referenced from Crossplane-managed secret
+            # PUBLIC client - no client secret needed
             oidc.config: |
               name: Keycloak
               issuer: https://sso.hnatekmar.xyz/realms/master
               clientID: argocd-bootstrap
               enablePKCEAuthentication: true
               refreshTokenThreshold: 2m
-              clientSecret: $argocd-bootstrap-oidc-creds:clientSecret
               requestedScopes: ["openid", "profile", "email", "groups"]
               requestedIDTokenClaims:
                 groups:
@@ -80,13 +79,15 @@ spec:
           # Ingress configuration using cert-manager (like other services)
           ingress:
             enabled: true
-            ingressClassName: kong
+            ingressClassName: nginx
             annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-prod
-              # Ingress handles SSL, backend uses HTTP
-              konghq.com/strip-path: "false"
-            tls: true
-            hostname: argocd-bootstrap.hnatekmar.xyz
+              cert-manager.io/cluster-issuer: letsencrypt-route53-devops
+              nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+            extraTls:
+              - hosts:
+                - argocd-bootstrap.hnatekmar.xyz
+                secretName: argocd-bootstrap-server-tls
 
           service:
             type: ClusterIP
