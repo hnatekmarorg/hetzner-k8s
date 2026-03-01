@@ -33,17 +33,13 @@ metadata:
 spec:
   project: default
   ignoreDifferences:
-    # Ignore status field changes and auto-populated default spec fields in ExternalSecrets
+    # Ignore status field changes and auto-populated spec fields in ExternalSecrets
     - group: external-secrets.io
       kind: ExternalSecret
       jsonPointers:
         - /status
-        - /spec/data/0/remoteRef/conversionStrategy
-        - /spec/data/0/remoteRef/decodingStrategy
-        - /spec/data/0/remoteRef/metadataPolicy
-        - /spec/target/creationPolicy
-        - /spec/target/deletionPolicy
-        - /spec/target/template/mergePolicy
+        - /spec/data
+        - /spec/target
   source:
     directory:
       recurse: true
