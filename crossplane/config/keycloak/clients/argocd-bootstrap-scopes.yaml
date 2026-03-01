@@ -1,0 +1,22 @@
+---
+# Keycloak Client Default Scopes for ArgoCD
+# This configures which scopes are automatically included in OIDC tokens
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: argocd-bootstrap-scopes
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: argocd-bootstrap
+    defaultScopes:
+      - email
+      - profile
+      - roles
+      - web-origins
+      - microprofile-jwt
