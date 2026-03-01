@@ -11,12 +11,12 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://argoproj.github.io/argo-helm
-    chart: argo-cd
-    targetRevision: 7.7.14
+    repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+    path: argocd
+    targetRevision: HEAD
     helm:
       valueFiles:
-        - $values/argocd/argocd-bootstrap-values.yaml
+        - argocd-bootstrap-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
