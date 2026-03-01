@@ -24,11 +24,11 @@ spec:
     realmId: master
 
     # Redirect URIs for web and CLI
-    # ArgoCD uses /api/dex/callback for OIDC
+    # ArgoCD uses /pkce/verify for direct OIDC with PKCE
     webOrigins:
       - https://argocd-bootstrap.hnatekmar.xyz
       - +
     validRedirectUris:
-      - https://argocd-bootstrap.hnatekmar.xyz/api/dex/callback
-      - http://localhost:8085/api/dex/callback
+      - https://argocd-bootstrap.hnatekmar.xyz/pkce/verify
+      - http://localhost:8085/pkce/verify
       - http://localhost:*
