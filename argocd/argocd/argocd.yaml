@@ -21,7 +21,7 @@ spec:
           domain: argocd-bootstrap.hnatekmar.xyz
           image:
             repository: quay.io/argoproj/argocd
-            tag: latest
+            tag: v2.12.3
             imagePullPolicy: IfNotPresent
           additionalLabels:
             app.kubernetes.io/part-of: argocd
