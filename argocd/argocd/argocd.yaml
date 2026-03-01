@@ -47,10 +47,10 @@ spec:
               clientID: argocd-bootstrap
               enablePKCEAuthentication: true
               refreshTokenThreshold: 2m
-              requestedScopes: ["openid", "email", "profile", "groups"]
+              requestedScopes: ["openid", "email", "profile"]
               requestedIDTokenClaims:
                 groups:
-                  essential: false
+                  essential: true
 
             # RBAC Policy - Default to read-only for authenticated users
             # Only users in ArgoCDAdmins group get admin access
