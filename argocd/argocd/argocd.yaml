@@ -16,7 +16,7 @@ spec:
     targetRevision: 7.7.14
     helm:
       valueFiles:
-        - $values/argocd/argocd/argocd-bootstrap-values.yaml
+        - $values/argocd/argocd-bootstrap-values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
