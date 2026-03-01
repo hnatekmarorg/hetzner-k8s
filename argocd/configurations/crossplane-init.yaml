@@ -33,11 +33,17 @@ metadata:
 spec:
   project: default
   ignoreDifferences:
-    # Ignore status field changes in ExternalSecrets (refreshTime, syncedResourceVersion update every 15s)
+    # Ignore status field changes and auto-populated default spec fields in ExternalSecrets
     - group: external-secrets.io
       kind: ExternalSecret
       jsonPointers:
         - /status
+        - /spec/data/0/remoteRef/conversionStrategy
+        - /spec/data/0/remoteRef/decodingStrategy
+        - /spec/data/0/remoteRef/metadataPolicy
+        - /spec/target/creationPolicy
+        - /spec/target/deletionPolicy
+        - /spec/target/template/mergePolicy
   source:
     directory:
       recurse: true
@@ -53,6 +59,7 @@ spec:
       selfHeal: true
     syncOptions:
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
