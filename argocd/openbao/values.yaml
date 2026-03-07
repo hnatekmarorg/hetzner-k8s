@@ -30,9 +30,23 @@ server:
     storageClass: "local-path"
   auditStorage:
     storageClass: "local-path"
-  # Token configuration to prevent inode exhaustion
+  # MIGRATION: Switch from file to Raft storage to fix inode exhaustion
+  # File storage creates 2M+ small files, exhausting inodes
+  # Raft uses single raft.db file with automatic compaction
   extraConfig: |
-    # Token TTL limits
+    # Raft integrated storage - production-ready, low inode usage
+    storage "raft" {
+      path = "/openbao/data"
+      node_id = "openbao-0"
+      
+      # Raft tuning for inode-constrained environment
+      # Higher thresholds = fewer snapshots, less file operations
+      snapshot_threshold = 16384     # Default 8192 - doubled to reduce snapshots
+      snapshot_interval = 240       # Default 120s - check every 4 minutes
+      trailing_logs = 20000         # Default 10000 - more logs = fewer snapshots
+    }
+    
+    # Token TTL limits to reduce token file proliferation
     default_lease_ttl = "1h"
     max_lease_ttl = "24h"
     
@@ -44,4 +58,11 @@ server:
       default_ttl = "1h"
       # Maximum TTL for any token
       max_ttl = "24h"
+    }
+    
+    # Audit configuration - use stdout to avoid file creation
+    audit "file" {
+      file_path = "stdout"
+      mode = "0600"
+      elide_list_responses = true
     }
