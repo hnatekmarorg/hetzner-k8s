@@ -67,9 +67,3 @@ server:
         # Maximum TTL for any token
         max_ttl = "24h"
       }
-
-      # Audit configuration - use stdout to avoid file creation
-      audit "file" {
-        file_path = "stdout"
-        mode = "0600"
-      }
