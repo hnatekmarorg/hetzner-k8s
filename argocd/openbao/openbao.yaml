@@ -19,11 +19,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "-1"
 spec:
   ignoreDifferences:
-    - group: admissionregistration.k8s.io
-      kind: MutatingWebhookConfiguration
-      name: openbao-agent-injector-cfg
-      jqPathExpressions:
-        - .webhooks[].clientConfig.caBundle
+     - group: admissionregistration.k8s.io
+       kind: MutatingWebhookConfiguration
+       name: openbao-agent-injector-cfg
+       jqPathExpressions:
+         - .webhooks[].clientConfig.caBundle
+     - group: ""
+       kind: ConfigMap
+       name: openbao-config
+       jqPathExpressions:
+         - .metadata.annotations
   project: default
   sources:
     - chart: openbao
