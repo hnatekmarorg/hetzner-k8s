@@ -72,5 +72,4 @@ server:
       audit "file" {
         file_path = "stdout"
         mode = "0600"
-        elide_list_responses = true
       }
