@@ -1,0 +1,23 @@
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: librechat
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  writeConnectionSecretToRef:
+    namespace: crossplane-system
+    name: librechat-creds
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: CONFIDENTIAL
+    clientId: librechat
+    standardFlowEnabled: true
+    directAccessGrantsEnabled: true
+    enabled: true
+    realmId: master
+    webOrigins:
+      - https://librechat.hnatekmar.dev
+    validRedirectUris:
+      - https://librechat.hnatekmar.dev/auth/callback
