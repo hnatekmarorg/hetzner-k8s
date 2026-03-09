@@ -1,18 +1,17 @@
 ---
-# Keycloak Client Role for hnatekmarorg Base Users
-# Users with this role get access to sign user SSH certificates
+# Realm role for hnatekmarorg base users
+# This role grants access to sign user SSH certificates
 apiVersion: role.keycloak.crossplane.io/v1alpha1
 kind: Role
 metadata:
-  name: hnatekmarorg-base-role
+  name: hnatekmarorg-base-realm-role
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
+  deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
     name: hnatekmarorg-base
     realmId: master
-    clientId: bao-hnatekmar-xyz
     description: "Base role for hnatekmarorg SSH certificate access"
-    composite: false

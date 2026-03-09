@@ -1,3 +1,6 @@
+---
+# SSO Role for hnatekmarorg base users (using realm role)
+# Users with hnatekmarorg-base group get the hnatekmarorg-base realm role
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:

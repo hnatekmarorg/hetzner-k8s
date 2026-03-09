@@ -1,18 +1,17 @@
 ---
-# Keycloak Client Role for hnatekmarorg Admin Users
-# Users with this role get full access to SSH backend
+# Realm role for hnatekmarorg admin users
+# This role grants full access to SSH backend
 apiVersion: role.keycloak.crossplane.io/v1alpha1
 kind: Role
 metadata:
-  name: hnatekmarorg-admin-role
+  name: hnatekmarorg-admin-realm-role
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
+  deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
     name: hnatekmarorg-admin
     realmId: master
-    clientId: bao-hnatekmar-xyz
     description: "Admin role for hnatekmarorg SSH backend management"
-    composite: false
