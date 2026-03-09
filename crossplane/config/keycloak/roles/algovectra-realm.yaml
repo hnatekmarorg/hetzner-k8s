@@ -1,0 +1,17 @@
+---
+# Realm role for algovectra users
+# This role grants access to algovectra KV store and SSH certificates
+apiVersion: role.keycloak.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: algovectra-realm-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    name: algovectra
+    realmId: master
+    description: "Role for algovectra users with KV and SSH access"

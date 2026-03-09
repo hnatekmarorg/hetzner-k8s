@@ -1,0 +1,21 @@
+---
+# Map algovectra group to realm roles
+# Users in this group will get both algovectra and algovectra-ssh realm roles
+apiVersion: group.keycloak.crossplane.io/v1alpha1
+kind: Roles
+metadata:
+  name: algovectra-realm-roles
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    groupIdRef:
+      name: algovectra
+    realmId: master
+    roleIdsRefs:
+      - name: algovectra-realm-role
+      - name: algovectra-ssh-realm-role
+    exhaustive: true

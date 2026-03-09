@@ -1,0 +1,17 @@
+---
+# Realm role for algovectra SSH access
+# This role grants SSH certificate signing access
+apiVersion: role.keycloak.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: algovectra-ssh-realm-role
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    name: algovectra-ssh
+    realmId: master
+    description: "Role for algovectra SSH certificate signing"
