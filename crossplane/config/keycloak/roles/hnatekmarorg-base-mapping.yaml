@@ -1,0 +1,20 @@
+---
+# Map hnatekmarorg-base group to its client role
+# Users in this group will automatically get the hnatekmarorg-base role
+apiVersion: group.keycloak.crossplane.io/v1alpha1
+kind: Roles
+metadata:
+  name: hnatekmarorg-base-roles
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    groupIdRef:
+      name: hnatekmarorg-base
+    realmId: master
+    roleIdsRefs:
+      - name: hnatekmarorg-base-role
+    exhaustive: true
