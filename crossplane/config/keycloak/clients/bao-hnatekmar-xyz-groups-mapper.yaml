@@ -1,19 +1,19 @@
 ---
-# Protocol Mapper to include groups in JWT token
-# This ensures groups are ALWAYS included in the JWT, regardless of optional scopes
+# Protocol Mapper attached to the groups client scope
+# Adds groups claim to all JWT tokens
 apiVersion: protocolmapper.client.keycloak.crossplane.io/v1alpha1
 kind: ProtocolMapper
 metadata:
   name: bao-hnatekmar-xyz-groups-mapper
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
-    clientIdRef:
-      name: bao-hnatekmar-xyz
+    clientScopeIdRef:
+      name: bao-hnatekmar-xyz-groups-scope
     realmId: master
     name: groups
     protocol: openid-connect
