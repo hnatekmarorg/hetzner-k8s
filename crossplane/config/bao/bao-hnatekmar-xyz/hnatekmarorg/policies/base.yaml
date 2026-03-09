@@ -1,0 +1,15 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: hnatekmarorg-base
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    name: hnatekmarorg-base
+    policy: |
+      path "hnatekmarorg-ssh/sign/user" {
+        capabilities = ["create", "update"]
+      }

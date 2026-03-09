@@ -1,0 +1,13 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: hnatekmarorg-ssh
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    path: hnatekmarorg-ssh
+    type: ssh
+    description: "SSH Secret Engine for hnatekmarorg managed by Crossplane"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

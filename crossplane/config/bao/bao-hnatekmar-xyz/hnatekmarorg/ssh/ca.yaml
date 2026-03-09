@@ -1,0 +1,12 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendCA
+metadata:
+  name: hnatekmarorg-ssh-ca
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    backend: hnatekmarorg-ssh
+    generateSigningKey: true
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

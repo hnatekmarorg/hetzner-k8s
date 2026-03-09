@@ -1,0 +1,25 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendRole
+metadata:
+  name: hnatekmarorg-infra-role
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: "infra"
+    backend: hnatekmarorg-ssh
+    keyType: "ca"
+    defaultUser: "root"
+    cidrList: "0.0.0.0/0"
+    allowedUsers: "*"
+    ttl: "24h"
+    maxTtl: "168h"  # 7 days max (allows 1-week renewal window)
+    allowHostCertificates: true
+    allowUserCertificates: false
+    allowedExtensions: "permit-pty,permit-port-forwarding,permit-X11-forwarding"
+    defaultExtensions:
+      "permit-pty": ""
+      "permit-port-forwarding": ""
+      "permit-X11-forwarding": ""
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
