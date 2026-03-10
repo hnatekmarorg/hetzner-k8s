@@ -20,7 +20,7 @@ spec:
     roleType: oidc
     groupsClaim: groups
     boundClaims:
-      groups: "hnatekmarorg"
+      groups: "hnatekmarorg-base"
     tokenPolicies:
       - hnatekmarorg-base
     # Token TTL limits for user tokens
