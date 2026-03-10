@@ -1,7 +1,7 @@
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-algovectra
+  name: algovectra
   namespace: crossplane-system
 spec:
   providerConfigRef:
