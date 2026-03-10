@@ -1,6 +1,6 @@
 ---
 # SSO Role for hnatekmarorg base users
-# Users with hnatekmarorg group get the hnatekmarorg- base policy
+# Users with hnatekmarorg group get the hnatekmarorg-base policy
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
