@@ -9,7 +9,7 @@ spec:
   forProvider:
     path: oidc
     type: oidc
-    defaultRole: sso
+    defaultRole: sso-admin
     oidcClientId: bao-hnatekmar-xyz
     oidcClientSecretSecretRef:
       key: attribute.client_secret
