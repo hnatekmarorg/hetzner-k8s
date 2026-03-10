@@ -1,7 +1,7 @@
 ---
 # Client Scope for groups claim in JWT
 # This scope includes a protocol mapper that adds groups to tokens
-apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+apiVersion: clientscopes.openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientScope
 metadata:
   name: bao-hnatekmar-xyz-groups-scope

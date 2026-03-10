@@ -1,7 +1,7 @@
 ---
 # Protocol Mapper attached to the groups client scope
 # Adds groups claim to all JWT tokens
-apiVersion: client.keycloak.crossplane.io/v1alpha1
+apiVersion: protocolmapper.client.keycloak.crossplane.io/v1alpha1
 kind: ProtocolMapper
 metadata:
   name: bao-hnatekmar-xyz-groups-mapper
