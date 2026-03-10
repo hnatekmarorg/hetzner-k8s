@@ -4,7 +4,7 @@
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: admin
+  name: sso-hnatekmarorg-admin
   namespace: crossplane-system
 spec:
   providerConfigRef:

@@ -1,7 +1,7 @@
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-algovectra
+  name: sso-admin
   namespace: crossplane-system
 spec:
   providerConfigRef:
@@ -13,15 +13,17 @@ spec:
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: sso-algovectra
+    roleName: sso-admin
     roleType: oidc
     groupsClaim: groups
+    oidcScopes:
+      - "openid"
+      - "microprofile-jwt"
     boundClaims:
-      groups: "algovectra"
+      groups: "admin"
     tokenPolicies:
-      - algovectra
-      - algovectra-ssh
-    # Token TTL limits for user tokens
-    tokenTtl: 3600
-    tokenMaxTtl: 14400
+      - sso-admin-identity
+    # Token TTL limits for admin tokens
+    tokenTtl: 86400
+    tokenMaxTtl: 86400
     tokenType: "service"
