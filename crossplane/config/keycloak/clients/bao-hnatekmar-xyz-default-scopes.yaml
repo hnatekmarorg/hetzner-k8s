@@ -1,10 +1,10 @@
 ---
-# Attach default scopes to the bao-hnatekmar-xyz client
-# microprofile-jwt includes groups claim in JWT tokens
+# Attach groups scope as a default scope to the bao-hnatekmar-xyz client
+# This ensures groups are ALWAYS included in JWT tokens
 apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientDefaultScopes
 metadata:
-  name: bao-hnatekmar-xyz-default-scopes
+  name: bao-hnatekmar-xyz-groups-default
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
@@ -16,9 +16,4 @@ spec:
       name: bao-hnatekmar-xyz
     realmId: master
     defaultScopes:
-      - acr
-      - email
-      - profile
-      - roles
-      - web-origins
-      - microprofile-jwt
+      - bao-hnatekmar-xyz-groups
