@@ -18,9 +18,4 @@ spec:
       - https://bao.hnatekmar.xyz
     validRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
-      - http://localhost:8250/oidc/callback
-    # Default client scopes for token claims
-    defaultClientScopes:
-      - groups
-      - profile
-      - email
+      - http://localhost:8085/oidc/callback
