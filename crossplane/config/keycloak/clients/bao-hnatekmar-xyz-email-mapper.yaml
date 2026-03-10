@@ -1,0 +1,27 @@
+---
+# Protocol Mapper to add email claim to JWT tokens
+# Required for Vault OIDC authentication (userClaim: email)
+apiVersion: client.keycloak.crossplane.io/v1alpha1
+kind: ProtocolMapper
+metadata:
+  name: bao-hnatekmar-xyz-email-mapper
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    clientScopeIdRef:
+      name: bao-hnatekmar-xyz-groups-scope
+    realmId: master
+    name: email
+    protocol: openid-connect
+    protocolMapper: oidc-usermodel-attribute-mapper
+    config:
+      claim.name: "email"
+      jsonType.label: "String"
+      user.attribute: "email"
+      access.token.claim: "true"
+      id.token.claim: "true"
+      userinfo.token.claim: "true"
