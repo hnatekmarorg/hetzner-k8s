@@ -20,8 +20,8 @@ spec:
     protocolMapper: oidc-group-membership-mapper
     config:
       claim.name: "groups"
-      jsonType.label: "String"
-      full.path: "true"
+      jsonType.label: "JSON"
+      full.path: "false"
       access.token.claim: "true"
       id.token.claim: "true"
       userinfo.token.claim: "true"
