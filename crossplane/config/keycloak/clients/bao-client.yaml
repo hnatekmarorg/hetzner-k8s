@@ -19,4 +19,3 @@ spec:
     validRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8085/oidc/callback
-      - http://localhost:8250/oidc/callback
