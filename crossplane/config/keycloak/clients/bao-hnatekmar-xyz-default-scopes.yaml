@@ -1,13 +1,13 @@
 ---
 # Attach groups scope as a default scope to the bao-hnatekmar-xyz client
 # This ensures groups are ALWAYS included in JWT tokens
-apiVersion: clientdefaultscopes.openidclient.keycloak.crossplane.io/v1alpha1
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientDefaultScopes
 metadata:
   name: bao-hnatekmar-xyz-groups-default
   annotations:
     argocd.argoproj.io/sync-wave: "5"
-spec:
+  spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
