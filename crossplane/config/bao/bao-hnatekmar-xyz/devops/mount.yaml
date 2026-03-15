@@ -1,0 +1,16 @@
+---
+# kv-v2 mount for devops secrets (GitHub OAuth credentials, etc)
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: devops
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    path: devops
+    type: kv-v2
