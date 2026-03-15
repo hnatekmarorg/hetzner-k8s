@@ -1,0 +1,17 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: devops-github-reader
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    name: devops-github-reader
+    policy: |
+      path "devops/data/github/*" {
+        capabilities = ["read", "list"]
+      }

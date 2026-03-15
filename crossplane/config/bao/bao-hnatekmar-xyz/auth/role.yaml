@@ -14,6 +14,7 @@ spec:
       - external-secrets
     tokenPolicies:
       - clusters-secret-creator
+      - devops-github-reader
     # Token TTL limits to prevent accumulation
     tokenTtl: 1800
     tokenMaxTtl: 3600
