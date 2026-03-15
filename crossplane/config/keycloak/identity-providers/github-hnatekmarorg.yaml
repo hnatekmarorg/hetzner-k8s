@@ -1,0 +1,30 @@
+---
+# Keycloak GitHub Identity Provider for hnatekmarorg organization
+apiVersion: oidc.keycloak.crossplane.io/v1alpha1
+kind: IdentityProvider
+metadata:
+  name: github-hnatekmarorg
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realm: master
+    alias: github-hnatekmarorg
+    displayName: GitHub (hnatekmarorg)
+    providerId: github
+    trustEmail: true
+    firstBrokerLoginFlowAlias: first-broker-login
+    authorizationUrl: https://github.com/login/oauth/authorize
+    tokenUrl: https://github.com/login/oauth/access_token
+    clientIdSecretRef:
+      name: github-hnatekmarorg
+      namespace: crossplane-system
+      key: clientId
+    clientSecretSecretRef:
+      name: github-hnatekmarorg
+      namespace: crossplane-system
+      key: clientSecret

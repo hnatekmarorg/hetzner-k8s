@@ -1,0 +1,30 @@
+---
+# Keycloak GitHub Identity Provider for algovectra organization
+apiVersion: oidc.keycloak.crossplane.io/v1alpha1
+kind: IdentityProvider
+metadata:
+  name: github-algovectra
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realm: master
+    alias: github-algovectra
+    displayName: GitHub (algovectra)
+    providerId: github
+    trustEmail: true
+    firstBrokerLoginFlowAlias: first-broker-login
+    authorizationUrl: https://github.com/login/oauth/authorize
+    tokenUrl: https://github.com/login/oauth/access_token
+    clientIdSecretRef:
+      name: github-algovectra
+      namespace: crossplane-system
+      key: clientId
+    clientSecretSecretRef:
+      name: github-algovectra
+      namespace: crossplane-system
+      key: clientSecret
