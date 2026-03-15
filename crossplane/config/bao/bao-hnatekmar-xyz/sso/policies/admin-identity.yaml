@@ -1,14 +1,14 @@
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: sso-admin-identity
+  name: admin-identity
   namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: sso-admin-identity
+    name: admin-identity
     policy: |
       path "*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]

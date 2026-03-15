@@ -1,5 +1,5 @@
 ---
-# Map hnatekmarorg-admin group to its client role
+# Map hnatekmarorg-admin group to its realm role
 # Users in this group will automatically get the hnatekmarorg-admin role
 apiVersion: group.keycloak.crossplane.io/v1alpha1
 kind: Roles
@@ -16,5 +16,5 @@ spec:
       name: hnatekmarorg-admin
     realmId: master
     roleIdsRefs:
-      - name: hnatekmarorg-admin-role
+      - name: hnatekmarorg-admin-realm-role
     exhaustive: true

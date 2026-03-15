@@ -1,10 +1,10 @@
 ---
-# SSO Role for hnatekmarorg base users (using realm role)
-# Users with hnatekmarorg-base group get the hnatekmarorg-base realm role
+# SSO Role for hnatekmarorg users
+# Users with hnatekmarorg-base group get the hnatekmarorg policy
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-hnatekmarorg-base
+  name: hnatekmarorg
   namespace: crossplane-system
 spec:
   providerConfigRef:
@@ -16,14 +16,13 @@ spec:
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: sso-hnatekmarorg-base
+    roleName: hnatekmarorg
     roleType: oidc
     groupsClaim: groups
     boundClaims:
       groups: "hnatekmarorg-base"
     tokenPolicies:
-      - hnatekmarorg-base
-    # Token TTL limits for user tokens
+      - hnatekmarorg
     tokenTtl: 3600
     tokenMaxTtl: 14400
     tokenType: "service"

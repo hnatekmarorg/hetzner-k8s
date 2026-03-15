@@ -22,6 +22,3 @@ spec:
       path "hnatekmarorg-ssh/config/ca" {
         capabilities = ["read"]
       }
-      path "hnatekmarorg-ssh/sign/*" {
-        capabilities = ["create", "update"]
-      }

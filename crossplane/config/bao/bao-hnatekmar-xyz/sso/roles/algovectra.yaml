@@ -1,7 +1,7 @@
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-algovectra
+  name: algovectra
   namespace: crossplane-system
 spec:
   providerConfigRef:
@@ -13,7 +13,7 @@ spec:
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: sso-algovectra
+    roleName: algovectra
     roleType: oidc
     groupsClaim: groups
     boundClaims:
@@ -21,7 +21,6 @@ spec:
     tokenPolicies:
       - algovectra
       - algovectra-ssh
-    # Token TTL limits for user tokens
     tokenTtl: 3600
     tokenMaxTtl: 14400
     tokenType: "service"

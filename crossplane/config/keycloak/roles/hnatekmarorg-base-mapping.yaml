@@ -1,10 +1,10 @@
 ---
-# Map hnatekmarorg-base group to its client role
-# Users in this group will automatically get the hnatekmarorg-base role
+# Map hnatekmarorg-base group to its realm role
+# Users in this group will automatically get the hnatekmarorg role
 apiVersion: group.keycloak.crossplane.io/v1alpha1
 kind: Roles
 metadata:
-  name: hnatekmarorg-base-roles
+  name: hnatekmarorg-roles
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
@@ -16,5 +16,5 @@ spec:
       name: hnatekmarorg-base
     realmId: master
     roleIdsRefs:
-      - name: hnatekmarorg-base-role
+      - name: hnatekmarorg-realm-role
     exhaustive: true
