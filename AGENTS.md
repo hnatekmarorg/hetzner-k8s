@@ -13,19 +13,39 @@ This repository manages Kubernetes infrastructure using:
 ## Directory Structure
 
 ```
-├── argocd/              # ArgoCD Application definitions
-│   ├── cert-manager/    # SSL/TLS certificate management
-│   ├── crossplane/      # Crossplane deployment
-│   ├── external-secrets/# External Secrets Operator
-│   ├── openbao/         # OpenBao (Vault) Helm chart values
-│   ├── configurations/  # Crossplane configurations
-│   └── *.yaml           # Application definitions (keycloak, kong, etc.)
-├── crossplane/          # Crossplane resources
-│   ├── config/          # Provider configurations and compositions
-│   ├── init/            # Initial provider setup
-│   └── secrets/         # Secret definitions
-├── init.yaml            # Root ArgoCD application
-└── pod.yaml             # Example pod definitions
+├── argocd/                          # ArgoCD Application definitions
+│   ├── cert-manager/                # SSL/TLS certificate management
+│   ├── crossplane/                  # Crossplane deployment
+│   ├── external-secrets/            # External Secrets Operator
+│   ├── openbao/                     # OpenBao (Vault) Helm chart values
+│   ├── configurations/              # Crossplane configurations
+│   ├── argocd/                      # ArgoCD self-managed deployment
+│   ├── keycloak.yaml                # Keycloak application
+│   ├── kong.yaml                    # Kong API gateway
+│   ├── kubernetes_ingress.yaml      # Kubernetes ingress controller
+│   └── init.yaml                    # Root ArgoCD application
+├── crossplane/                      # Crossplane resources
+│   ├── config/                      # Provider configurations and compositions
+│   │   ├── providers/               # Provider configs (bao, digitalocean, sso)
+│   │   ├── bao/                     # OpenBao secrets engine configs
+│   │   │   ├── <domain>/            
+│   │   │   │   ├── auth/            # Authentication methods
+│   │   │   │   ├── sso/             # SSO service configuration
+│   │   │   │   ├── clusters/        # Kubernetes cluster secrets
+│   │   │   │   ├── <project>/       # Project-specific configs (ssh, policies)
+│   │   │   └── <project>/           # Project-specific configs
+│   │   ├── eso/                     # External Secrets configurations
+│   │   │   └── secretStore/         # Secret store definitions
+│   │   └── keycloak/                # Keycloak identity management
+│   │       ├── clients/             # OIDC clients and scopes
+│   │       ├── groups/              # Group definitions
+│   │       └── roles/               # Role and realm mappings
+│   ├── init/                        # Initial provider setup
+│   │   ├── providers/               # Provider installations
+│   │   └── functions/               # Crossplane functions (kcl, auto-ready)
+│   └── secrets/                     # Secret definitions
+├── init.yaml                        # Root ArgoCD application
+└── pod.yaml                         # External Secrets test pod
 ```
 
 ## Commands
@@ -37,9 +57,6 @@ direnv allow
 
 # Verify kubectl access
 kubectl cluster-info
-
-# Check ArgoCD apps
-argocd app list
 
 # Check Crossplane providers
 kubectl get providers -A
@@ -53,9 +70,6 @@ find . -name "*.yaml" -exec yamllint {} \;
 # Dry-run Kubernetes manifests
 kubectl apply --dry-run=client -f <file>.yaml
 
-# Check ArgoCD sync status
-argocd app sync <app-name> --dry-run
-
 # Validate Crossplane compositions
 kubectl explain <kind>
 ```
@@ -65,9 +79,6 @@ This repository uses declarative YAML manifests rather than traditional tests. V
 ```bash
 # Kubectl server-side dry-run
 kubectl apply --dry-run=server -f <manifest>.yaml
-
-# ArgoCD sync with prune
-argocd app sync <app-name> --prune --dry-run
 ```
 
 ### Helm Commands
@@ -82,19 +93,21 @@ helm lint <chart>
 helm show values <chart-url>
 ```
 
-### ArgoCD CLI Examples
+### ArgoCD Operations
+This repository uses GitOps with automatic syncing - manual syncs are rarely needed. When necessary, use kubectl:
+
 ```bash
-# Get app details
-argocd app get <app-name>
+# List ArgoCD applications
+kubectl get app -n argocd
 
-# Sync an application
-argocd app sync <app-name>
+# Get application details and status
+kubectl get app <app-name> -n argocd -o yaml
 
-# Force sync (if out of sync)
-argocd app sync <app-name> --force
+# Check application health and sync status
+kubectl describe app <app-name> -n argocd
 
-# Rollback
-argocd app rollback <app-name> <revision>
+# Force retry (if stuck in sync error)
+kubectl patch app <app-name> -n argocd --type=merge -p '{"spec":{"syncPolicy":{"retry":{"limit":5}}}}'
 ```
 
 ## Code Style Guidelines
@@ -191,92 +204,36 @@ argocd app rollback <app-name> <revision>
 
 ### Crossplane Patterns
 
+For detailed Crossplane resource patterns and configurations, see:
+
+- **[Keycloak Configuration](docs/crossplane/keycloak.md)** - Groups, roles, clients, and mappings
+- **[OpenBao Configuration](docs/crossplane/openbao.md)** - Auth backends, secrets engines, and policies
+- **[SSO Integration](docs/crossplane/sso-integration.md)** - Complete Keycloak ↔ OpenBao integration guide
+- **[Provider Configurations](docs/crossplane/provider-configs.md)** - Setting up Crossplane providers
+- **[Crossplane Initialization](docs/crossplane/initialization.md)** - Provider and function installation
+- **[External Secrets](docs/crossplane/external-secrets.md)** - Syncing secrets from OpenBao to Kubernetes
+
+#### Quick Reference
+
 1. **Provider Configuration**: Include credentials reference
-   ```yaml
-   apiVersion: vault.upbound.io/v1beta1
-   kind: ProviderConfig
-   metadata:
-     name: bao-hnatekmar-xyz
-   spec:
-     address: https://bao.hnatekmar.xyz
-     credentials:
-       source: Secret
-       secretRef:
-         name: openbao-hnatekmar-xyz
-         namespace: crossplane-system
-         key: config
-   ```
+    ```yaml
+    apiVersion: vault.upbound.io/v1beta1
+    kind: ProviderConfig
+    metadata:
+      name: bao-hnatekmar-xyz
+    spec:
+      address: https://bao.hnatekmar.xyz
+      credentials:
+        source: Secret
+        secretRef:
+          name: openbao-hnatekmar-xyz
+          namespace: crossplane-system
+          key: config
+    ```
 
 2. **Compositions**: Organize by service type (auth, clusters, ssh, etc.)
 
-3. **Keycloak Client Configuration**:
-   
-   **Location**: `crossplane/config/keycloak/clients/<client-name>.yaml`
-   
-   **PKCE Client (for CLI support)**:
-   ```yaml
-   apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
-   kind: Client
-   metadata:
-     name: <client-name>
-     annotations:
-       argocd.argoproj.io/sync-wave: "2"
-   spec:
-     writeConnectionSecretToRef:
-       namespace: crossplane-system
-       name: <client-name>-oidc-creds
-     providerConfigRef:
-       name: sso-hnatekmar-xyz
-     forProvider:
-       accessType: PUBLIC
-       clientId: <client-name>
-       standardFlowEnabled: true
-       directAccessGrantsEnabled: true
-       enabled: true
-       realmId: master
-       webOrigins:
-         - https://<client-domain>
-       validRedirectUris:
-         - https://<client-domain>/auth/callback
-         - http://localhost:8085/auth/callback
-       pkceCodeChallengeMethod: S256
-   ```
-   
-   **CONFIDENTIAL Client (server-to-server)**:
-   ```yaml
-   apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
-   kind: Client
-   metadata:
-     name: <client-name>
-   spec:
-     writeConnectionSecretToRef:
-       namespace: crossplane-system
-       name: <client-name>-creds
-     providerConfigRef:
-       name: sso-hnatekmar-xyz
-     forProvider:
-       accessType: CONFIDENTIAL
-       clientId: <client-name>
-       standardFlowEnabled: true
-       enabled: true
-       realmId: master
-       webOrigins:
-         - https://<client-domain>
-       validRedirectUris:
-         - https://<client-domain>/auth/callback
-   ```
-   
-   **Example Integration with ArgoCD**:
-   ```yaml
-   configs:
-     cm:
-       oidc.config: |
-         name: Keycloak
-         issuer: https://sso.hnatekmar.xyz/realms/master
-         clientID: <client-name>
-         clientSecret: $<client-name>-oidc-creds:clientSecret
-         enablePKCEAuthentication: true
-   ```
+3. **Keycloak Client Types**: See [Keycloak Configuration](docs/crossplane/keycloak.md) for PKCE (for CLIs) and CONFIDENTIAL (for services) clients
 
 ### Error Handling
 
@@ -351,10 +308,13 @@ export VAULT_ADDR=https://bao.hnatekmar.xyz
 3. Update Crossplane provider images
 4. Test compatibility before deploying
 
+### Adding Project SSO
+See [docs/workflows/adding-project-sso.md](docs/workflows/adding-project-sso.md) for complete instructions.
+
 ### Troubleshooting
 ```bash
 # Check ArgoCD app health
-argocd app get <app-name> -o yaml
+kubectl get app <app-name> -n argocd -o yaml
 
 # View Crossplane resources
 kubectl get managed -A
