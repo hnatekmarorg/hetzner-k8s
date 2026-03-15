@@ -1,0 +1,18 @@
+# Devops mount at OpenBao
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: local-devops
+spec:
+  provider:
+    vault:
+      server: https://bao.hnatekmar.xyz
+      path: "devops"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          serviceAccountRef:
+            name: external-secrets
+            namespace: external-secrets
+          role: "bao-hnatekmar-xyz"
