@@ -7,8 +7,10 @@ metadata:
   name: bao-hnatekmar-xyz-groups-default
   annotations:
     argocd.argoproj.io/sync-wave: "5"
-  spec:
+spec:
   deletionPolicy: Delete
+  managementPolicies:
+    - '*'
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
