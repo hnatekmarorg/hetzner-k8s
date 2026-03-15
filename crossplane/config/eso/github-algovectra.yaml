@@ -1,0 +1,20 @@
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: github-algovectra
+  namespace: crossplane-system
+spec:
+  refreshInterval: "15s"
+  secretStoreRef:
+    name: local-devops
+    kind: ClusterSecretStore
+  target:
+    name: github-algovectra
+    template:
+      type: Opaque
+      data:
+        clientId: "{{ .clientId }}"
+        clientSecret: "{{ .clientSecret }}"
+  dataFrom:
+    - extract:
+        key: github/algovectra

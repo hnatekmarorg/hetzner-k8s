@@ -16,10 +16,19 @@ spec:
     alias: github-algovectra
     displayName: GitHub (algovectra)
     providerId: github
-    trustEmail: true
-    firstBrokerLoginFlowAlias: first-broker-login
+    trustEmail: false
+    storeToken: false
+    addReadTokenRoleOnCreate: false
+    authenticateByDefault: false
+    linkOnly: false
+    hideOnLoginPage: false
+    enabled: true
+    syncMode: LEGACY
+    defaultScopes: "read:user user:email"
+
     authorizationUrl: https://github.com/login/oauth/authorize
     tokenUrl: https://github.com/login/oauth/access_token
+
     clientIdSecretRef:
       name: github-algovectra
       namespace: crossplane-system
@@ -28,3 +37,9 @@ spec:
       name: github-algovectra
       namespace: crossplane-system
       key: clientSecret
+
+    extraConfig:
+      # Critical: GitHub returns form-encoded, not JSON
+      githubJsonFormat: "false"
+      # Use GitHub login as email when email is null
+      updateProfileFirstLoginMode: "on"
