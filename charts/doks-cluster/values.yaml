@@ -1,0 +1,47 @@
+# Default values for doks-cluster chart.
+
+# Cluster configuration
+cluster:
+  # Cluster name (defaults to release name if empty)
+  name: ""
+  # DigitalOcean region
+  region: "nyc1"
+  # Kubernetes version (use full version slug format)
+  version: "1.28.3-do.0"
+
+  # Node pool configuration
+  nodePool:
+    name: "default"
+    # Droplet size (e.g., s-2vcpu-2gb, s-4vcpu-4gb)
+    size: "s-2vcpu-2gb"
+    # Number of nodes
+    nodeCount: 2
+    # Auto-scaling settings
+    autoScale: false
+    minNodes: 1
+    maxNodes: 3
+
+  # Optional VPC UUID (if empty, uses default VPC)
+  vpcUUID: ""
+
+  # Auto-upgrade Kubernetes version
+  autoUpgrade: false
+  # Maintenance window (required if autoUpgrade is true)
+  maintenanceWindow:
+    day: ""  # e.g., "monday", "tuesday"
+    startTime: ""  # e.g., "04:00"
+
+  # Provider config reference (defaults to "digitalocean")
+  providerConfigRef:
+    name: "digitalocean"
+
+  # High availability (requires Kubernetes 1.21+)
+  highAvailability: false
+
+  # Surge upgrade (default true, performs rolling upgrade with surge)
+  surgeUpgrade: true
+
+  # Connection secret configuration
+  writeConnectionSecretToRef:
+    name: ""
+    namespace: "crossplane-system"

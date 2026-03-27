@@ -1,0 +1,14 @@
+{{- $cluster := .Values.cluster -}}
+{{- $clusterName := $cluster.name | default .Release.Name -}}
+apiVersion: helm.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: {{ $clusterName }}-helm
+  namespace: crossplane-system
+spec:
+  credentials:
+    secretRef:
+      key: kubeconfig
+      name: {{ $clusterName }}
+      namespace: crossplane-system
+    source: Secret

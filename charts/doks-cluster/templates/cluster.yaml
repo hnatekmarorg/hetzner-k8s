@@ -1,0 +1,48 @@
+{{- $cluster := .Values.cluster -}}
+{{- $name := $cluster.name | default .Release.Name -}}
+apiVersion: kubernetes.digitalocean.crossplane.io/v1alpha1
+kind: Cluster
+metadata:
+  name: {{ $name }}
+spec:
+  forProvider:
+    name: {{ $name }}
+    region: {{ $cluster.region }}
+    version: "{{ $cluster.version }}"
+    {{- if $cluster.vpcUUID }}
+    vpcUUID: {{ $cluster.vpcUUID }}
+    {{- end }}
+    {{- if or $cluster.autoUpgrade $cluster.maintenanceWindow.day $cluster.maintenanceWindow.startTime }}
+    maintenanceWindow:
+      {{- if $cluster.maintenanceWindow.day }}
+      day: {{ $cluster.maintenanceWindow.day }}
+      {{- end }}
+      {{- if $cluster.maintenanceWindow.startTime }}
+      startTime: {{ $cluster.maintenanceWindow.startTime }}
+      {{- end }}
+    {{- end }}
+    {{- if $cluster.nodePool }}
+    nodePool:
+      - name: {{ $cluster.nodePool.name }}
+        size: {{ $cluster.nodePool.size }}
+        nodeCount: {{ $cluster.nodePool.nodeCount }}
+        {{- if $cluster.nodePool.autoScale }}
+        autoScale: {{ $cluster.nodePool.autoScale }}
+        {{- if $cluster.nodePool.minNodes }}
+        minNodes: {{ $cluster.nodePool.minNodes }}
+        {{- end }}
+        {{- if $cluster.nodePool.maxNodes }}
+        maxNodes: {{ $cluster.nodePool.maxNodes }}
+        {{- end }}
+        {{- end }}
+    {{- end }}
+  {{- if $cluster.providerConfigRef }}
+  providerConfigRef:
+    name: {{ $cluster.providerConfigRef.name }}
+  {{- else if $cluster.highAvailability }}
+  providerConfigRef:
+    name: {{ $name }}-kubernetes
+  {{- end }}
+  writeConnectionSecretToRef:
+    name: {{ $cluster.writeConnectionSecretToRef.name | default $name }}
+    namespace: {{ $cluster.writeConnectionSecretToRef.namespace }}

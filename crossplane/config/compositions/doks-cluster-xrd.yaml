@@ -1,0 +1,16 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xdigitaloceanclusters.crossplane.example.com
+spec:
+  group: crossplane.example.com
+  names:
+    kind: XDigitalOceanCluster
+    plural: xdigitaloceanclusters
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+  claimNames:
+    kind: DigitalOceanCluster
+    plural: digitaloceanclusters

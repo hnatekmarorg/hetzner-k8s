@@ -1,0 +1,103 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xdigitaloceanclusters.with-argocd
+  labels:
+    crossplane.example.com/composition: doks-with-argocd
+spec:
+  compositeTypeRef:
+    apiVersion: crossplane.example.com/v1alpha1
+    kind: XDigitalOceanCluster
+  patchSets:
+    - name: commonLabels
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.labels
+          toFieldPath: metadata.labels
+  resources:
+    # 1. Create DOKS Cluster
+    - name: doks-cluster
+      base:
+        apiVersion: kubernetes.digitalocean.crossplane.io/v1alpha1
+        kind: Cluster
+        spec:
+          forProvider:
+            name: ""
+            region: nyc1
+            version: "1.30.4-do.0"
+            nodePool:
+              - name: default-pool
+                size: s-2vcpu-4gb
+                nodeCount: 3
+          providerConfigRef:
+            name: digitalocean
+          writeConnectionSecretToRef:
+            name: doks-cluster-kubeconfig
+            namespace: crossplane-system
+      patches:
+        - fromFieldPath: metadata.name
+          toFieldPath: spec.forProvider.name
+        - fromFieldPath: metadata.labels
+          toFieldPath: metadata.labels
+      connectionDetails:
+        - name: kubeconfig
+          fromConnectionSecretKey: kubeconfig
+
+    # 2. Install ArgoCD via Helm Release on the remote DOKS cluster
+    - name: argo-cd-helm-release
+      base:
+        apiVersion: helm.crossplane.io/v1beta1
+        kind: Release
+        spec:
+          forProvider:
+            chart:
+              name: argo-cd
+              repository: https://argoproj.github.io/argo-helm
+            namespace: argocd
+            values:
+              server:
+                service:
+                  type: LoadBalancer
+            skipCrds: false
+          providerConfigRef:
+            name: doks-cluster
+      dependsOn:
+        - doks-cluster
+
+    # 3. Create ArgoCD Application resource on the remote cluster
+    # This is a placeholder - user should fill in the source details
+    - name: argo-cd-application
+      base:
+        apiVersion: kubernetes.crossplane.io/v1alpha1
+        kind: Object
+        metadata:
+          annotations:
+            crossplane.io/external-name: argocd
+        spec:
+          forProvider:
+            manifest:
+              apiVersion: argoproj.io/v1alpha1
+              kind: Application
+              metadata:
+                name: placeholder-app
+                namespace: argocd
+              spec:
+                destination:
+                  server: https://kubernetes.default.svc
+                  namespace: default
+                source:
+                  repoURL: https://github.com/example/repo.git
+                  targetRevision: HEAD
+                  path: .
+                  helm:
+                    valueFiles:
+                      - values.yaml
+                project: default
+                syncPolicy:
+                  automated:
+                    prune: true
+                    selfHeal: true
+          providerConfigRef:
+            name: doks-cluster
+      dependsOn:
+        - argo-cd-helm-release

@@ -1,0 +1,14 @@
+{{- $cluster := .Values.cluster -}}
+{{- $clusterName := $cluster.name | default .Release.Name -}}
+apiVersion: kubernetes.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: {{ $clusterName }}-kubernetes
+  namespace: crossplane-system
+spec:
+  credentials:
+    secretRef:
+      key: kubeconfig
+      name: {{ $clusterName }}
+      namespace: crossplane-system
+    source: Secret
