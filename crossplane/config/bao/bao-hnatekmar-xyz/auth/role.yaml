@@ -15,6 +15,7 @@ spec:
     tokenPolicies:
       - clusters-secret-creator
       - devops-github-reader
+    aliasNameSource: serviceaccount_name
     # Token TTL limits to prevent accumulation
     tokenTtl: 1800
     tokenMaxTtl: 3600
