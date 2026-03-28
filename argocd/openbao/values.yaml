@@ -74,7 +74,7 @@ agentInject:
   enabled: true
   replicaCount: 1
   # Disable pod anti-affinity for single-node deployment
-  affinity: ""
+  affinity: null
   # Resource limits
   resources:
     requests:
