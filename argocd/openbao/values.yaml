@@ -67,3 +67,19 @@ server:
         # Maximum TTL for any token
         max_ttl = "24h"
       }
+
+
+# Agent Injector configuration
+agentInject:
+  enabled: true
+  replicaCount: 1
+  # Disable pod anti-affinity for single-node deployment
+  affinity: ""
+  # Resource limits
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
