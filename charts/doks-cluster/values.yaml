@@ -48,6 +48,11 @@ cluster:
 
 # ArgoCD configuration
 argocd:
+  # Repository configuration for the base chart
+  repoUrl: https://github.com/hnatekmar/hetzner-k8s.git
+  targetRevision: HEAD
+  # Path to the chart directory within the repository
+  path: charts/doks-cluster-base
   # Chart version (defaults to 7.7.18)
   chartVersion: "7.7.18"
   # Helm chart values

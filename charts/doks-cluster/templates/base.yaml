@@ -1,0 +1,46 @@
+{{- $cluster := .Values.cluster -}}
+{{- $clusterName := $cluster.name | default .Release.Name -}}
+{{- $argocd := .Values.argocd -}}
+apiVersion: kubernetes.crossplane.io/v1alpha2
+kind: Object
+metadata:
+  name: {{ $clusterName }}-base-apps
+spec:
+  forProvider:
+    # Argocd application 
+    manifest:
+      apiVersion: argoproj.io/v1alpha1
+      kind: Application
+      metadata:
+        name: base
+        namespace: argocd
+        annotations:
+          argocd.argoproj.io/sync-wave: "2"
+      spec:
+        project: default
+        source:
+          repoURL: {{ $argocd.repoUrl }}
+          targetRevision: {{ $argocd.targetRevision | quote }}
+          path: {{ $argocd.path }}
+        destination:
+          server: {{ $cluster.url }}
+          namespace: argocd
+        syncPolicy:
+          automated:
+            prune: true
+            selfHeal: true
+            allowEmpty: true
+          syncOptions:
+            - CreateNamespace=true
+            - PrunePropagationPolicy=foreground
+            - PruneLast=true
+            - FailOnSharedResource=true
+            - AutoCreateNamespace=true
+          retry:
+            limit: -1
+            backoff:
+              duration: 5s
+              factor: 2
+              maxDuration: 3m
+  providerConfigRef:
+    name: {{ $cluster.name }}-kubernetes

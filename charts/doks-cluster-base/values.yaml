@@ -1,2 +1,27 @@
+cluster:
+  name: ""  # Cluster name (defaults to release name)
+  region: ""  # DigitalOcean region (e.g., fra1)
+  version: ""  # Kubernetes version (e.g., 1.35.1-do.1)
+  nodePool:
+    name: "default"
+    size: "s-2vcpu-2gb"
+    nodeCount: 1
+  providerConfigRef:
+    name: "digitalocean"
+  writeConnectionSecretToRef:
+    name: ""
+    namespace: "crossplane-system"
+  argocdApp:
+    enabled: false  # Set to true to deploy an ArgoCD Application on the provisioned cluster
+    name: ""  # ArgoCD Application name
+    project: "default"
+    repoURL: "https://github.com/hnatekmarorg/hetzner-k8s.git"
+    targetRevision: "HEAD"
+    path: "charts/"
+    namespace: "default"
+    syncPolicy:
+      selfHeal: true
+      prune: true
+
 clusterIssuer:
   email: m.hnatma@gmail.com
