@@ -3,11 +3,11 @@
 # Cluster configuration
 cluster:
   # Cluster name (defaults to release name if empty)
-  name: ""
+  name: "test-cluster"
   # DigitalOcean region
-  region: "nyc1"
+  region: "fra1"
   # Kubernetes version (use full version slug format)
-  version: "1.28.3-do.0"
+  version: "1.35.1-do.1"
 
   # Node pool configuration
   nodePool:
@@ -15,11 +15,11 @@ cluster:
     # Droplet size (e.g., s-2vcpu-2gb, s-4vcpu-4gb)
     size: "s-2vcpu-2gb"
     # Number of nodes
-    nodeCount: 2
+    nodeCount: 1
     # Auto-scaling settings
     autoScale: false
     minNodes: 1
-    maxNodes: 3
+    maxNodes: 1
 
   # Optional VPC UUID (if empty, uses default VPC)
   vpcUUID: ""
@@ -28,8 +28,8 @@ cluster:
   autoUpgrade: false
   # Maintenance window (required if autoUpgrade is true)
   maintenanceWindow:
-    day: ""  # e.g., "monday", "tuesday"
-    startTime: ""  # e.g., "04:00"
+    day: "" # e.g., "monday", "tuesday"
+    startTime: "" # e.g., "04:00"
 
   # Provider config reference (defaults to "digitalocean")
   providerConfigRef:
@@ -43,5 +43,59 @@ cluster:
 
   # Connection secret configuration
   writeConnectionSecretToRef:
-    name: ""
+    name: "test-cluster"
+    namespace: "crossplane-system"
+
+# ArgoCD configuration
+argocd:
+  # Chart version (defaults to 7.7.18)
+  chartVersion: "7.7.18"
+  # Helm chart values
+  values:
+    global:
+      domain: argocd.hnatekmar.xyz
+
+    configs:
+      cm:
+        "url.path": "/argocd"
+
+    server:
+      ingress:
+        enabled: true
+        ingressClassName: kong
+        hosts:
+          - argocd.hnatekmar.xyz
+        annotations:
+          konghq.com/strip-path: "true"
+
+      service:
+        type: ClusterIP
+
+      # Disable TLS for ingress
+      extraArgs:
+        - --insecure
+
+    # Disable default metrics for testing
+    controller:
+      metrics:
+        enabled: false
+
+    repoServer:
+      metrics:
+        enabled: false
+
+      metrics:
+        enabled: false
+
+    redis:
+      enabled: false
+
+    redis-ha:
+
+    # Use simple password for testing
+    credentialTemplate:
+      enabled: false
+
+  writeConnectionSecretToRef:
+    name: "test-cluster"
     namespace: "crossplane-system"

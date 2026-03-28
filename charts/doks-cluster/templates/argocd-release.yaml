@@ -1,0 +1,20 @@
+{{- $cluster := .Values.cluster -}}
+{{- $clusterName := $cluster.name | default .Release.Name -}}
+{{- $argocd := .Values.argocd -}}
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: {{ $clusterName }}-argocd
+  namespace: crossplane-system
+spec:
+  forProvider:
+    namespace: argocd
+    chart:
+      name: argo-cd
+      repository: https://argoproj.github.io/argo-helm
+      version: {{ $argocd.chartVersion | default "7.7.18" }}
+    values:
+      {{- toYaml $argocd.values | nindent 6 }}
+  providerConfigRef:
+    name: {{ $clusterName }}-helm
+  deletionPolicy: Orphan

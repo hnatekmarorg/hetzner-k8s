@@ -9,6 +9,6 @@ spec:
   credentials:
     secretRef:
       key: kubeconfig
-      name: {{ $clusterName }}
+      name: {{ $clusterName }}-kubeconfig
       namespace: crossplane-system
     source: Secret
