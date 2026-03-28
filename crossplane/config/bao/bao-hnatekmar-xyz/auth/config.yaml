@@ -7,7 +7,8 @@ spec:
   forProvider:
     backendRef:
       name: bao-hnatekmar-xyz
-    kubernetesHost: "https://kubernetes.default.svc"
+    kubernetesHost: "https://kubernetes.default.svc.cluster.local"
     disableIssValidation: true
+    disableLocalCaJwt: true
   providerConfigRef:
     name: bao-hnatekmar-xyz
