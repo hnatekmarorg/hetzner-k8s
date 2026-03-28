@@ -2,17 +2,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: digitalocean-production-cluster
+  name: doks-cluster-production
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "5"
+    argocd.argoproj.io/sync-wave: "4"
 spec:
   project: default
   source:
     repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
     targetRevision: HEAD
-    path: charts/doks-cluster-base
+    path: charts/doks-cluster
     helm:
+      releaseName: doks-cluster-production
       valuesObject:
         cluster:
           name: "production-cluster"
@@ -27,20 +28,18 @@ spec:
           writeConnectionSecretToRef:
             name: "production-cluster"
             namespace: "crossplane-system"
-          argocdApp:
+          argocd:
             enabled: true
-            name: "production-apps"
             project: "default"
             repoURL: "https://github.com/hnatekmarorg/hetzner-k8s.git"
             targetRevision: "HEAD"
-            path: "charts/"
             namespace: "default"
             syncPolicy:
               selfHeal: true
               prune: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: production-cluster
+    namespace: doks-cluster-production
   syncPolicy:
     automated:
       selfHeal: true

@@ -40,36 +40,74 @@ This repository manages Kubernetes infrastructure using:
 ```
 .
 ├── argocd/                          # ArgoCD Application definitions
-│   ├── cert-manager/                # SSL/TLS certificate management
-│   ├── crossplane/                  # Crossplane deployment
-│   ├── external-secrets/            # External Secrets Operator
-│   ├── openbao/                     # OpenBao (Vault) Helm chart values
-│   ├── configurations/              # Crossplane configurations
 │   ├── argocd/                      # ArgoCD self-managed deployment
+│   │   └── argocd.yaml
+│   ├── cert-manager/                # SSL/TLS certificate management
+│   │   ├── application.yaml
+│   │   └── cluster-issuer.yaml
+│   ├── configurations/              # Crossplane configurations
+│   │   └── crossplane-init.yaml
+│   ├── crossplane/                  # Crossplane deployment
+│   │   └── crossplane.yaml
+│   ├── digitalOcean/                # DigitalOcean cluster configs
+│   │   └── clusters/production.yaml
+│   ├── doks-cluster/                # DOKS cluster application
+│   │   └── application.yaml
+│   ├── external-secrets/            # External Secrets Operator
+│   │   └── application.yaml
 │   ├── keycloak.yaml                # Keycloak application
 │   ├── kong.yaml                    # Kong API gateway
 │   ├── kubernetes_ingress.yaml      # Kubernetes ingress controller
+│   ├── openbao/                     # OpenBao (Vault) Helm chart values
+│   │   ├── openbao.yaml
+│   │   └── values.yaml
 │   └── init.yaml                    # Root ArgoCD application
+├── charts/                          # Custom Helm charts
+│   ├── doks-cluster/                # DOKS cluster chart
+│   │   ├── Chart.yaml
+│   │   ├── values.yaml
+│   │   └── templates/
+│   └── doks-cluster-base/           # DOKS cluster base chart
+│       ├── Chart.yaml
+│       ├── values.yaml
+│       └── templates/
 ├── crossplane/                      # Crossplane resources
 │   ├── config/                      # Provider configurations and compositions
-│   │   ├── providers/               # Provider configs (bao, digitalocean, sso)
 │   │   ├── bao/                     # OpenBao secrets engine configs
-│   │   │   └── <domain>/
+│   │   │   └── bao-hnatekmar-xyz/
+│   │   │       ├── algovectra/      # Project-specific configs
 │   │   │       ├── auth/            # Authentication methods
-│   │   │       ├── sso/             # SSO service configuration
 │   │   │       ├── clusters/        # Kubernetes cluster secrets
-│   │   │       └── <project>/       # Project-specific configs (ssh, policies)
+│   │   │       ├── devops/          # Devops project configs
+│   │   │       ├── hnatekmarorg/    # hnatekmarorg project configs
+│   │   │       └── sso/             # SSO service configuration
 │   │   ├── eso/                     # External Secrets configurations
 │   │   │   └── secretStore/         # Secret store definitions
-│   │   └── keycloak/                # Keycloak identity management
-│   │       ├── clients/             # OIDC clients and scopes
-│   │       ├── groups/              # Group definitions
-│   │       └── roles/               # Role and realm mappings
+│   │   ├── keycloak/                # Keycloak identity management
+│   │   │   ├── identity-providers/  # OIDC identity providers
+│   │   │   ├── clients/             # OIDC clients and scopes
+│   │   │   ├── groups/              # Group definitions
+│   │   │   └── roles/               # Role and realm mappings
+│   │   └── providers/               # Provider configs (bao, digitalocean, sso)
 │   ├── init/                        # Initial provider setup
-│   │   ├── providers/               # Provider installations
-│   │   └── functions/               # Crossplane functions (kcl, auto-ready)
+│   │   ├── functions/               # Crossplane functions (kcl, auto-ready)
+│   │   └── providers/               # Provider installations (digitalocean, helm, keycloak, kubernetes, vault)
 │   └── secrets/                     # Secret definitions
-├── init.yaml                        # Root ArgoCD application
+├── docs/                            # Documentation
+│   ├── crossplane/                  # Crossplane-specific docs
+│   │   ├── external-secrets.md
+│   │   ├── initialization.md
+│   │   ├── keycloak.md
+│   │   ├── openbao.md
+│   │   ├── provider-configs.md
+│   │   └── sso-integration.md
+│   └── workflows/                   # Workflow documentation
+│       ├── adding-project-sso.md
+│       └── troubleshooting.md
+├── openspec/                        # OpenSpec configuration
+│   ├── changes/                     # OpenSpec change records
+│   └── config.yaml
+├── init.yaml                        # Root ArgoCD application (legacy)
 └── pod.yaml                         # External Secrets test pod
 ```
 
