@@ -4,6 +4,8 @@ kind: Application
 metadata:
   name: doks-cluster-production
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/background
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:
