@@ -5,6 +5,7 @@ kind: Mount
 metadata:
   name: devops
   namespace: crossplane-system
+spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
