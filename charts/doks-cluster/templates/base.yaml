@@ -25,9 +25,6 @@ spec:
           repoURL: {{ $argocd.repoUrl }}
           targetRevision: {{ $argocd.targetRevision | quote }}
           path: {{ $argocd.path }}
-        destination:
-          server: {{ $cluster.url }}
-          namespace: argocd
         syncPolicy:
           automated:
             prune: true

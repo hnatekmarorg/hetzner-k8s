@@ -1,0 +1,135 @@
+# Production values for doks-cluster chart
+
+# Cluster configuration
+cluster:
+  # Cluster name (defaults to release name if empty)
+  name: "prod-cluster"
+  # DigitalOcean region
+  region: "nyc1"
+  # Kubernetes version (use full version slug format)
+  version: "1.35.1-do.1"
+
+  # Primary node pool configuration (CPU - static nodes)
+  nodePool:
+    name: "cpu-workers"
+    # Droplet size (e.g., s-2vcpu-2gb, s-4vcpu-4gb)
+    size: "s-4vcpu-16gb"
+    # Number of nodes (static, not autoscaling)
+    nodeCount: 1
+    # Auto-scaling settings
+    autoScale: false
+
+  # Additional node pools
+  additionalNodePools:
+    # GPU node pool (L40s 48GB - autoscaling)
+    - name: "gpu-workers"
+      # NVIDIA L40s 48GB
+      size: "gpu-l40sx1-48gb"
+      # Initial node count
+      nodeCount: 0
+      # Auto-scaling enabled
+      autoScale: true
+      minNodes: 0
+      maxNodes: 5
+      # Labels for GPU workloads
+      labels:
+        nvidia.com/gpu: "true"
+        workload-type: "ai-ml"
+        node-class: "gpu"
+      # Taints to ensure only GPU pods schedule on these nodes
+      taints:
+        - key: "nvidia.com/gpu"
+          value: "true"
+          effect: "NoSchedule"
+        - key: "workload-type"
+          value: "ai-ml"
+          effect: "NoSchedule"
+
+  # Optional VPC UUID (if empty, uses default VPC)
+  vpcUUID: ""
+
+  # Auto-upgrade Kubernetes version
+  autoUpgrade: false
+
+  # Maintenance window (required if autoUpgrade is true)
+  maintenanceWindow:
+    day: "sunday"
+    startTime: "04:00"
+
+  # Provider config reference (defaults to "digitalocean")
+  providerConfigRef:
+    name: "digitalocean"
+
+  # High availability (requires Kubernetes 1.21+)
+  highAvailability: false
+
+  # Surge upgrade (default true, performs rolling upgrade with surge)
+  surgeUpgrade: true
+
+  # Connection secret configuration
+  writeConnectionSecretToRef:
+    name: "prod-cluster"
+    namespace: "crossplane-system"
+
+# ArgoCD configuration
+argocd:
+  # Repository configuration for the base chart
+  repoUrl: https://github.com/hnatekmar/hetzner-k8s.git
+  targetRevision: HEAD
+  # Path to the chart directory within the repository
+  path: charts/doks-cluster-base
+  # Chart version (defaults to 7.7.18)
+  chartVersion: "7.7.18"
+
+  # Helm chart values
+  values:
+    global:
+      domain: argocd.yourdomain.com
+
+    configs:
+      cm:
+        "url.path": "/argocd"
+
+    server:
+      ingress:
+        enabled: true
+        ingressClassName: kong
+        hosts:
+          - argocd.yourdomain.com
+        annotations:
+          konghq.com/strip-path: "true"
+          cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+      service:
+        type: ClusterIP
+
+      # Disable TLS for ingress (or set to true with cert-manager)
+      extraArgs:
+        - --insecure
+
+    # Production: Enable metrics
+    controller:
+      metrics:
+        enabled: true
+
+    repoServer:
+      metrics:
+        enabled: true
+
+    applicationSet:
+      metrics:
+        enabled: true
+
+    redis:
+      enabled: true
+
+    redis-ha:
+      enabled: false
+
+    # Use proper password for production
+    credentialTemplate:
+      enabled: true
+
+  writeConnectionSecretToRef:
+    name: "prod-cluster"
+    namespace: "crossplane-system"
