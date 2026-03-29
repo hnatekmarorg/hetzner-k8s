@@ -8,6 +8,8 @@ kind: Application
 metadata:
   name: kong
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:

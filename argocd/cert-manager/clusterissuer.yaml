@@ -1,21 +1,16 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cert-manager
+  name: cert-manager-clusterissuer
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   project: default
   source:
-    repoURL: https://charts.jetstack.io
-    chart: cert-manager
-    targetRevision: 1.18.0
-    helm:
-      releaseName: cert-manager
-      valuesObject:
-        crds:
-          enabled: true
+    repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+    targetRevision: main
+    path: argocd/cert-manager/clusterissuer
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
@@ -23,5 +18,6 @@ spec:
     automated:
       prune: true
       selfHeal: true
+      allowEmpty: true
     syncOptions:
-      - CreateNamespace=true
+      - ServerSideApply=true
