@@ -21,10 +21,8 @@ metadata:
   name: k8s-oidc-public
   namespace: default
   annotations:
+    argocd.argoproj.io/sync-wave: "1"
     cert-manager.io/cluster-issuer: letsencrypt-prod
-    # Use the Kong Ingress Controller
-    konghq.com/strip-path: "false"
-    konghq.com/preserve-host: "false"
 spec:
   ingressClassName: kong
   tls:
