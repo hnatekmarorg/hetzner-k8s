@@ -5,9 +5,6 @@ kind: Mount
 metadata:
   name: devops
   namespace: crossplane-system
-  annotations:
-    argocd.argoproj.io/sync-wave: "10"
-spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
