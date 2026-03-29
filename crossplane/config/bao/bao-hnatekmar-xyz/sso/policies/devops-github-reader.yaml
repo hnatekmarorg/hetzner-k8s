@@ -3,6 +3,7 @@ kind: Policy
 metadata:
   name: devops-github-reader
   namespace: crossplane-system
+spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
