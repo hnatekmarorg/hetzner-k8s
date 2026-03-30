@@ -27,8 +27,27 @@ spec:
     # ArgoCD with PKCE uses /auth/callback
     webOrigins:
       - https://argocd-bootstrap.hnatekmar.xyz
-      - +
     validRedirectUris:
       - https://argocd-bootstrap.hnatekmar.xyz/auth/callback
       - http://localhost:8085/auth/callback
       - http://localhost:*
+
+---
+# Keycloak Client Optional Scopes for ArgoCD
+# Optional scopes that can be requested during authentication
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: argocd-bootstrap-optional-scopes
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    clientIdRef:
+      name: argocd-bootstrap
+    realmId: master
+    optionalScopes:
+      - phone
