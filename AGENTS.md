@@ -286,6 +286,8 @@ kubectl patch app <app-name> -n argocd --type=merge -p '{"spec":{"syncPolicy":{"
 For detailed Crossplane resource patterns and configurations, see:
 
 - **[Keycloak Configuration](docs/crossplane/keycloak.md)** - Groups, roles, clients, and mappings
+  - **Required**: All OIDC clients for OpenBao must include `email` and `microprofile-jwt` default scopes
+  - See [Client Default Scopes Configuration](docs/crossplane/keycloak.md#client-default-scopes-configuration) for details
 - **[OpenBao Configuration](docs/crossplane/openbao.md)** - Auth backends, secrets engines, and policies
 - **[SSO Integration](docs/crossplane/sso-integration.md)** - Complete Keycloak ↔ OpenBao integration guide
 - **[Provider Configurations](docs/crossplane/provider-configs.md)** - Setting up Crossplane providers

@@ -139,11 +139,43 @@ spec:
 - `roleIdsRefs`: List of roles to assign to group members
 - `exhaustive`: If `true`, roles not listed will be removed from the group
 
-## Sync Wave Convention
-
-Keycloak resources use ArgoCD sync waves for ordered deployment:
-
-- **Wave 1**: Provider configurations (SSO provider)
-- **Wave 2**: Groups (must exist before roles)
-- **Wave 3**: Realm roles (must exist before mappings)
 - **Wave 4**: Group-to-role mappings
+
+### Client Default Scopes Configuration
+
+When creating OIDC clients for OpenBao/Vault or similar services that require JWT tokens with specific claims, always configure default scopes to ensure required claims are included:
+
+```yaml
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: <client>-default-scopes
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    clientIdRef:
+      name: <client>
+    realmId: master
+    defaultScopes:
+      # Required: email claim for user identification
+      - email
+      # Required: microprofile-jwt scope for groups in token
+      - microprofile-jwt
+      # Optional: custom groups scope if additional group mapping is needed
+      - <custom-groups-scope>
+```
+
+**Required Default Scopes**:
+
+1. **`email`**: Standard OpenID Connect scope that adds the `email` claim to tokens. Required for OpenBao authentication which uses `userClaim: email`.
+
+2. **`microprofile-jwt`**: Keycloak's built-in scope for MicroProfile JWT propagation. Includes groups in the token, required for JWT-based authorization.
+
+**Common Issues**:
+
+- **`claim "email" not found in token`**: The client is missing the `email` default scope. Add `email` to the `ClientDefaultScopes` resource.
+- **Groups not in token**: Ensure `microprofile-jwt` is included in default scopes, or create a custom protocol mapper for groups.
