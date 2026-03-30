@@ -19,3 +19,41 @@ spec:
     validRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: bao-hnatekmar-xyz-default-scopes
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    clientIdRef:
+      name: bao-hnatekmar-xyz
+    realmId: master
+    defaultScopes:
+      - acr
+      - profile
+      - roles
+      - email
+      - microprofile-jwt
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: bao-hnatekmar-xyz-optional-scopes
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    clientIdRef:
+      name: bao-hnatekmar-xyz
+    realmId: master
+    optionalScopes:
+      - phone
