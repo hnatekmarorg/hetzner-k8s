@@ -39,6 +39,7 @@ spec:
       jsonPointers:
         - /status
         - /spec/dataFrom
+        - /spec/data
         - /spec/target
   source:
     directory:
