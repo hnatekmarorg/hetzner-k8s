@@ -1,0 +1,26 @@
+---
+# Protocol mapper to add groups claim to OIDC token
+apiVersion: client.keycloak.crossplane.io/v1alpha1
+kind: ProtocolMapper
+metadata:
+  name: argocd-groups-mapper
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmIdRef:
+      name: master
+    clientIdRef:
+      name: argocd-bootstrap-hnatekmar-xyz
+    name: argocd-groups
+    protocol: openid-connect
+    protocolMapper: oidc-group-membership-mapper
+    config:
+      claim.name: "groups"
+      jsonType.label: "String"
+      full.path: "false"
+      multivalued: "true"

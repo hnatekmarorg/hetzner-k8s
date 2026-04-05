@@ -1,0 +1,21 @@
+---
+# ArgoCD Admins Group to Role Binding
+# Binds ArgoCD admins group to admin role
+apiVersion: group.keycloak.crossplane.io/v1alpha1
+kind: Roles
+metadata:
+  name: argocd-admins-role-binding
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmIdRef:
+      name: master
+    groupIdRef:
+      name: argocd-admins
+    roleIds:
+      - admin

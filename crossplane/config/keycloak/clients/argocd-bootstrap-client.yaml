@@ -10,7 +10,7 @@ spec:
   deletionPolicy: Delete
   writeConnectionSecretToRef:
     name: argocd-bootstrap-hnatekmar-xyz
-    namespace: crossplane-system
+    namespace: argocd
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
