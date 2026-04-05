@@ -15,8 +15,7 @@ spec:
     name: sso-hnatekmar-xyz
   forProvider:
     accessType: CONFIDENTIAL
-    realmIdRef:
-      name: master
+    realmId: master
     standardFlowEnabled: true
     clientId: argocd-bootstrap-hnatekmar-xyz
     fullScopeAllowed: true
@@ -32,14 +31,13 @@ spec:
 apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientDefaultScopes
 metadata:
-  name: argocd-bootstrap-hnatekmar-xyz
+  name: argocd-bootstrap-hnatekmar-xyz-default-scopes
   namespace: crossplane-system
 spec:
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
-    realmIdRef:
-      name: master
+    realmId: master
     clientIdRef:
       name: argocd-bootstrap-hnatekmar-xyz
     defaultScopes:
@@ -54,14 +52,13 @@ spec:
 apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientOptionalScopes
 metadata:
-  name: argocd-bootstrap-hnatekmar-xyz
+  name: argocd-bootstrap-hnatekmar-xyz-optional-scopes
   namespace: crossplane-system
 spec:
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
-    realmIdRef:
-      name: master
+    realmId: master
     clientIdRef:
       name: argocd-bootstrap-hnatekmar-xyz
     optionalScopes:
