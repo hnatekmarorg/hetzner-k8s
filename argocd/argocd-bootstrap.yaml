@@ -34,7 +34,7 @@ spec:
               name: sso
               issuer: https://sso.hnatekmar.xyz/realms/master
               clientID: argocd-bootstrap-hnatekmar-xyz
-              clientSecret: $argocd-sso:attribute.client_secret
+              clientSecret: $argocd-bootstrap-hnatekmar-xyz:attribute.client_secret
               requestedScopes:
                 - openid
                 - profile
