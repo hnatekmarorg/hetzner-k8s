@@ -24,6 +24,7 @@ spec:
           params:
             "server.insecure": "true"
           rbac:
+          rbac:
             create: true
             policy.csv: |
               g, admin, role:admin
