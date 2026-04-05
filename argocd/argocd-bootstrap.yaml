@@ -22,8 +22,7 @@ spec:
           domain: argocd-bootstrap.hnatekmar.xyz
         configs:
           params:
-            server:
-              insecure: true
+            "server.insecure": "true"
           rbac:
             create: true
             policy.csv: |
