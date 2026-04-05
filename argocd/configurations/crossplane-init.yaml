@@ -38,7 +38,7 @@ spec:
       kind: ExternalSecret
       jsonPointers:
         - /status
-        - /spec/data
+        - /spec/dataFrom
         - /spec/target
   source:
     directory:
@@ -70,6 +70,7 @@ spec:
     - group: external-secrets.io
       kind: ExternalSecret
       jsonPointers:
+        - /spec/dataFrom
         - /spec/data
   source:
     directory:
