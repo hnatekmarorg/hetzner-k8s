@@ -36,14 +36,14 @@ spec:
       allowEmpty: false # Allows deleting all application resources during automatic syncing ( false by default ).
     syncOptions:
       - CreateNamespace=true
-    ignoreDifferences:
-      - kind: Secret
-        group: ""
-        name: kong-kong-validation-webhook-ca-keypair
-        jsonPointers:
-          - /data
-      - kind: Secret
-        group: ""
-        name: kong-kong-validation-webhook-keypair
-        jsonPointers:
-          - /data
+  ignoreDifferences:
+    - kind: Secret
+      group: ""
+      name: kong-kong-validation-webhook-ca-keypair
+      jsonPointers:
+        - /data
+    - kind: Secret
+      group: ""
+      name: kong-kong-validation-webhook-keypair
+      jsonPointers:
+        - /data
