@@ -3,4 +3,4 @@ kind: Provider
 metadata:
   name: crossplane-contrib-provider-upjet-digitalocean
 spec:
-  package: xpkg.upbound.io/crossplane-contrib/provider-upjet-digitalocean:v0.3.1
+  package: xpkg.upbound.io/crossplane-contrib/provider-upjet-digitalocean:v0.3.0
