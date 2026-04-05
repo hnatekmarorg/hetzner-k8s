@@ -40,8 +40,9 @@ spec:
                 - microprofile-jwt
                 - email
         server:
-          extraArgs:
-            - --insecure
+          extraEnv:
+            - name: ARGOCD_SERVER_INSECURE
+              value: "true"
           ingress:
             enabled: true
             ingressClassName: kong
