@@ -1,0 +1,64 @@
+---
+# ArgoCD Bootstrap Application
+# Deploys ArgoCD with Keycloak SSO integration via Helm chart
+# Accessible via https://argocd-bootstrap.hnatekmar.xyz
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-bootstrap
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-cd
+    targetRevision: 9.4.17
+    helm:
+      valuesObject:
+        fullnameOverride: argocd
+        global:
+          domain: argocd-bootstrap.hnatekmar.xyz
+        configs:
+          params:
+            server:
+              insecure: true
+          rbac:
+            create: true
+            policy.csv: |
+              g, admin, role:admin
+          cm:
+            admin.enabled: false
+            url: https://argocd-bootstrap.hnatekmar.xyz
+            oidc.config: |
+              name: sso
+              issuer: https://sso.hnatekmar.xyz/realms/master
+              clientID: $argocd-sso:clientID
+              clientSecret: $argocd-sso:secretKey
+              requestedScopes:
+                - openid
+                - profile
+                - microprofile-jwt
+                - email
+        server:
+          ingress:
+            enabled: true
+            ingressClassName: kong
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+              nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+              nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+            extraTls:
+              - hosts:
+                  - argocd-bootstrap.hnatekmar.xyz
+                secretName: argocd-server-tls
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

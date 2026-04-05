@@ -1,0 +1,69 @@
+---
+# Keycloak OIDC Client for ArgoCD Bootstrap
+# This client enables SSO authentication for the ArgoCD Bootstrap instance
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: argocd-bootstrap-hnatekmar-xyz
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  writeConnectionSecretToRef:
+    name: argocd-bootstrap-hnatekmar-xyz
+    namespace: crossplane-system
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmIdRef:
+      name: master
+    standardFlowEnabled: true
+    clientId: argocd-bootstrap-hnatekmar-xyz
+    fullScopeAllowed: true
+    directAccessGrantsEnabled: true
+    baseUrl: /applications
+    validPostLogoutRedirectUris:
+      - https://argocd-bootstrap.hnatekmar.xyz/applications
+    rootUrl: https://argocd-bootstrap.hnatekmar.xyz
+    validRedirectUris:
+      - http://localhost:8080/auth/callback
+      - https://argocd-bootstrap.hnatekmar.xyz/auth/callback
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: argocd-bootstrap-hnatekmar-xyz
+  namespace: crossplane-system
+spec:
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmIdRef:
+      name: master
+    clientIdRef:
+      name: argocd-bootstrap-hnatekmar-xyz
+    defaultScopes:
+      - acr
+      - email
+      - profile
+      - roles
+      - web-origins
+      - microprofile-jwt
+      - groups
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: argocd-bootstrap-hnatekmar-xyz
+  namespace: crossplane-system
+spec:
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmIdRef:
+      name: master
+    clientIdRef:
+      name: argocd-bootstrap-hnatekmar-xyz
+    optionalScopes:
+      - phone
+      - address
