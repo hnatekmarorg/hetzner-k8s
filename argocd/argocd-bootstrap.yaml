@@ -22,6 +22,8 @@ spec:
           domain: argocd-bootstrap.hnatekmar.xyz
         configs:
           params:
+            server:
+              insecure: true
           rbac:
             create: true
             policy.csv: |
@@ -40,9 +42,6 @@ spec:
                 - microprofile-jwt
                 - email
         server:
-          extraEnv:
-            - name: ARGOCD_SERVER_INSECURE
-              value: "true"
           ingress:
             enabled: true
             ingressClassName: kong
