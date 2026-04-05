@@ -22,8 +22,6 @@ spec:
           domain: argocd-bootstrap.hnatekmar.xyz
         configs:
           params:
-            server:
-              insecure: true
           rbac:
             create: true
             policy.csv: |
@@ -47,8 +45,6 @@ spec:
             ingressClassName: kong
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
-              nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
-              nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
             extraTls:
               - hosts:
                   - argocd-bootstrap.hnatekmar.xyz
