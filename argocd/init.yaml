@@ -16,6 +16,8 @@ spec:
       group: external-secrets.io
       jsonPointers:
         - /status
+        - /spec/dataFrom
+        - /spec/target
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
