@@ -40,6 +40,8 @@ spec:
                 - microprofile-jwt
                 - email
         server:
+          extraArgs:
+            - --insecure
           ingress:
             enabled: true
             ingressClassName: kong
