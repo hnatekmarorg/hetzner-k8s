@@ -47,3 +47,8 @@ spec:
       name: kong-kong-validation-webhook-keypair
       jsonPointers:
         - /data
+    - kind: ConfigMap
+      group: ""
+      name: kong-kong-kong-validations
+      jsonPointers:
+        - /data
