@@ -17,13 +17,15 @@ spec:
     accessType: CONFIDENTIAL
     realmId: master
     standardFlowEnabled: true
-    clientId: argocd-bootstrap-hnatekmar-xyz
     fullScopeAllowed: true
     directAccessGrantsEnabled: true
+    serviceAccountsEnabled: true
+    clientId: argocd-bootstrap-hnatekmar-xyz
     baseUrl: /applications
+    rootUrl: https://argocd-bootstrap.hnatekmar.xyz
     validPostLogoutRedirectUris:
       - https://argocd-bootstrap.hnatekmar.xyz/applications
-    rootUrl: https://argocd-bootstrap.hnatekmar.xyz
+      - https://argocd-bootstrap.hnatekmar.xyz/auth/callback
     validRedirectUris:
       - http://localhost:8080/auth/callback
       - https://argocd-bootstrap.hnatekmar.xyz/auth/callback
