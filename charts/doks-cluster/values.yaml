@@ -100,7 +100,6 @@ argocd:
     # Use simple password for testing
     credentialTemplate:
       enabled: false
-
   writeConnectionSecretToRef:
     name: "test-cluster"
     namespace: "crossplane-system"

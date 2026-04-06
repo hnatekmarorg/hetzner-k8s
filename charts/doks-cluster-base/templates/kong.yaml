@@ -1,0 +1,49 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kong
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    chart: kong
+    repoURL: https://charts.konghq.com
+    targetRevision: 2.47.0
+    helm:
+      releaseName: kong
+      valuesObject:
+        podAnnotations:
+          konghq.com/plugins: prometheus
+        deployment:
+          prefixDir:
+            sizeLimit: 10Gi
+          tmpDir:
+            sizeLimit: 10Gi
+  destination:
+    server: "https://kubernetes.default.svc"
+    namespace: kong
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+  ignoreDifferences:
+    - kind: Secret
+      group: ""
+      name: kong-kong-validation-webhook-ca-keypair
+      jsonPointers:
+        - /data
+    - kind: Secret
+      group: ""
+      name: kong-kong-validation-webhook-keypair
+      jsonPointers:
+        - /data
+    - kind: ConfigMap
+      group: ""
+      name: kong-kong-kong-validations
+      jsonPointers:
+        - /data

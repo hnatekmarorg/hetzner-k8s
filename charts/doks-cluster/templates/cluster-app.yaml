@@ -1,13 +1,13 @@
 {{- $cluster := .Values.cluster -}}
 {{- $clusterName := $cluster.name | default .Release.Name -}}
 {{- $argocd := .Values.argocd -}}
-apiVersion: kubernetes.crossplane.io/v1alpha2
+apiVersion: kubernetes.crossplane.io/v1alpha1
 kind: Object
 metadata:
   name: {{ $clusterName }}-base-apps
 spec:
   forProvider:
-    # Argocd application 
+    # ArgoCD Application that bootstraps the cluster with foundational services
     manifest:
       apiVersion: argoproj.io/v1alpha1
       kind: Application
@@ -34,8 +34,6 @@ spec:
             - CreateNamespace=true
             - PrunePropagationPolicy=foreground
             - PruneLast=true
-            - FailOnSharedResource=true
-            - AutoCreateNamespace=true
           retry:
             limit: -1
             backoff:
@@ -43,4 +41,4 @@ spec:
               factor: 2
               maxDuration: 3m
   providerConfigRef:
-    name: {{ $cluster.name }}-kubernetes
+    name: {{ $clusterName }}-kubernetes

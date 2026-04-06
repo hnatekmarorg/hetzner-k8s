@@ -18,3 +18,4 @@ spec:
   providerConfigRef:
     name: {{ $clusterName }}-helm
   deletionPolicy: Orphan
+
