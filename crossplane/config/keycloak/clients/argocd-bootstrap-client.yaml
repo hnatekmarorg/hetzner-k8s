@@ -48,6 +48,7 @@ spec:
       - profile
       - roles
       - web-origins
+      - microprofile-jwt
       - groups
 ---
 apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
