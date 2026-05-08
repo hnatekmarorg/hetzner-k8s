@@ -1,0 +1,85 @@
+# Keycloak Helm Chart Values
+# Persistent PostgreSQL database configuration for production use
+
+http:
+  relativePath: "/"
+
+command:
+  - "/opt/keycloak/bin/kc.sh"
+  - "start"
+  - "--http-port=8080"
+  - "--hostname-strict=false"
+  - "--proxy-headers=xforwarded"
+  - "--http-enabled=true"
+  - "--db=postgres"
+  - "--db-url=jdbc:postgresql://keycloakx-postgresql:5432/keycloak"
+  - "--db-username=keycloak"
+
+ingress:
+  enabled: true
+  ingressClassName: kong
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  rules:
+    - host: sso.hnatekmar.xyz
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - sso.hnatekmar.xyz
+      secretName: sso-tls-secret
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
+  - key: node-role.kubernetes.io/master
+    operator: Exists
+    effect: NoSchedule
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 1Gi
+  limits:
+    cpu: "1"
+    memory: 2Gi
+
+extraEnv: |
+  - name: KC_HOSTNAME
+    value: "https://sso.hnatekmar.xyz"
+
+  - name: KC_PROXY_HEADERS
+    value: "xforwarded"
+
+  - name: KC_HEALTH_ENABLED
+    value: "true"
+  - name: KC_METRICS_ENABLED
+    value: "true"
+
+  - name: KC_DB
+    value: "postgres"
+
+  - name: KC_DB_URL
+    value: "jdbc:postgresql://keycloakx-postgresql:5432/keycloak"
+
+  - name: KC_DB_USERNAME
+    value: "keycloak"
+
+  - name: KC_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-db-creds
+        key: password
+
+  - name: KC_BOOTSTRAP_ADMIN_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-admin-creds
+        key: username
+  - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: keycloak-admin-creds
+        key: password

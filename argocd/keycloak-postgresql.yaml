@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: keycloak-postgresql
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"  # Deploy before Keycloak
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql
+    targetRevision: 16.0.0
+    helm:
+      releaseName: keycloakx-postgresql
+      values: |
+        auth:
+          existingSecret: keycloak-db-creds
+          secretKeys:
+            userPasswordKey: postgres-password
+          username: keycloak
+          database: keycloak
+        
+        primary:
+          persistence:
+            enabled: true
+            storageClass: local-path
+            size: 5Gi
+          
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          
+          extraEnv:
+            - name: POSTGRES_USER
+              value: keycloak
+            - name: POSTGRES_DB
+              value: keycloak
+        
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: keycloak
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

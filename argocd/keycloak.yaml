@@ -7,76 +7,24 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
-  source:
-    repoURL: https://codecentric.github.io/helm-charts
-    chart: keycloakx
-    targetRevision: 7.1.5
-    helm:
-      valuesObject:
-        http:
-          relativePath: "/"
-        command:
-          - "/opt/keycloak/bin/kc.sh"
-          - "start"
-          - "--http-port=8080"
-          - "--hostname-strict=false"
-          - "--proxy-headers=xforwarded"
-          - "--http-enabled=true"
-
-        ingress:
-          enabled: true
-          ingressClassName: kong
-          annotations:
-            cert-manager.io/cluster-issuer: letsencrypt-prod
-          rules:
-            - host: sso.hnatekmar.xyz
-              paths:
-                - path: /
-                  pathType: Prefix
-          tls:
-            - hosts:
-                - sso.hnatekmar.xyz
-              secretName: sso-tls-secret
-
-        tolerations:
-          - key: node-role.kubernetes.io/control-plane
-            operator: Exists
-            effect: NoSchedule
-          - key: node-role.kubernetes.io/master
-            operator: Exists
-            effect: NoSchedule
-
-        extraEnv: |
-          - name: KC_HOSTNAME
-            value: "https://sso.hnatekmar.xyz"
-
-          - name: KC_PROXY_HEADERS
-            value: "xforwarded"
-
-          - name: KC_HEALTH_ENABLED
-            value: "true"
-          - name: KC_METRICS_ENABLED
-            value: "true"
-
-          - name: KC_BOOTSTRAP_ADMIN_USERNAME
-            valueFrom:
-              secretKeyRef:
-                name: keycloak-admin-creds
-                key: username
-          - name: KC_BOOTSTRAP_ADMIN_PASSWORD
-            valueFrom:
-              secretKeyRef:
-                name: keycloak-admin-creds
-                key: password
-          - name: -proxy-headers xforwarded --http-enabled true
-
-          - name: JAVA_OPTS_APPEND
-            value: >-
-              -Djgroups.dns.query={{ include "keycloak.fullname" . }}-headless
+  sources:
+    - repoURL: https://codecentric.github.io/helm-charts
+      chart: keycloakx
+      targetRevision: 7.1.5
+      helm:
+        releaseName: keycloakx
+        valueFiles:
+          - $values/argocd/keycloak-values.yaml
+    - repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+      targetRevision: main
+      ref: values
+    - repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+      targetRevision: main
+      path: crossplane/secrets
+      ref: secrets
   destination:
     server: https://kubernetes.default.svc
     namespace: keycloak
-
   syncPolicy:
     automated:
       prune: true
