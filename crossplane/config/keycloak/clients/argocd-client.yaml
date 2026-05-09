@@ -1,0 +1,76 @@
+---
+# Keycloak OIDC Client for ArgoCD
+# This client enables SSO authentication for the main ArgoCD instance
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: argocd-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  writeConnectionSecretToRef:
+    name: argocd-hnatekmar-xyz
+    namespace: crossplane-system
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmId: master
+    standardFlowEnabled: true
+    fullScopeAllowed: true
+    directAccessGrantsEnabled: true
+    serviceAccountsEnabled: true
+    clientId: argocd-hnatekmar-xyz
+    baseUrl: /argocd
+    rootUrl: https://argocd.hnatekmar.xyz
+    validPostLogoutRedirectUris:
+      - https://argocd.hnatekmar.xyz/argocd
+      - https://argocd.hnatekmar.xyz/argocd/auth/callback
+    validRedirectUris:
+      - http://localhost:8080/argocd/auth/callback
+      - https://argocd.hnatekmar.xyz/argocd/auth/callback
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: argocd-hnatekmar-xyz-default-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: argocd-hnatekmar-xyz
+    defaultScopes:
+      - acr
+      - email
+      - profile
+      - roles
+      - web-origins
+      - microprofile-jwt
+      - groups
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: argocd-hnatekmar-xyz-optional-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: argocd-hnatekmar-xyz
+    optionalScopes:
+      - phone
+      - address

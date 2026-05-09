@@ -1,0 +1,30 @@
+---
+# ArgoCD Ingress via Kong
+# Exposes ArgoCD at https://argocd.hnatekmar.xyz/argocd
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    konghq.com/strip-path: "true"
+    konghq.com/preserve-host: "false"
+spec:
+  ingressClassName: kong
+  tls:
+    - hosts:
+        - argocd.hnatekmar.xyz
+      secretName: argocd-server-tls
+  rules:
+    - host: argocd.hnatekmar.xyz
+      http:
+        paths:
+          - path: /argocd
+            pathType: Prefix
+            backend:
+              service:
+                name: argocd-server
+                port:
+                  number: 80
