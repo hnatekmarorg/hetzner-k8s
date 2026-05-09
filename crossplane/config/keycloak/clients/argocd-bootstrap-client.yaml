@@ -6,6 +6,8 @@ kind: Client
 metadata:
   name: argocd-bootstrap-hnatekmar-xyz
   namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   deletionPolicy: Delete
   writeConnectionSecretToRef:
@@ -35,7 +37,10 @@ kind: ClientDefaultScopes
 metadata:
   name: argocd-bootstrap-hnatekmar-xyz-default-scopes
   namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
+  deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
@@ -56,7 +61,10 @@ kind: ClientOptionalScopes
 metadata:
   name: argocd-bootstrap-hnatekmar-xyz-optional-scopes
   namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
 spec:
+  deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:
@@ -66,4 +74,3 @@ spec:
     optionalScopes:
       - phone
       - address
-      

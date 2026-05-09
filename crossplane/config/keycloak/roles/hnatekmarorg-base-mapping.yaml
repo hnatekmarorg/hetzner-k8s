@@ -5,6 +5,7 @@ apiVersion: group.keycloak.crossplane.io/v1alpha1
 kind: Roles
 metadata:
   name: hnatekmarorg-roles
+  namespace: crossplane-system
   annotations:
     argocd.argoproj.io/sync-wave: "4"
 spec:

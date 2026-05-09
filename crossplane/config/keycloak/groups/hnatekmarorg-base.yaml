@@ -5,9 +5,11 @@ apiVersion: group.keycloak.crossplane.io/v1alpha1
 kind: Group
 metadata:
   name: hnatekmarorg-base
+  namespace: crossplane-system
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
+  deletionPolicy: Delete
   providerConfigRef:
     name: sso-hnatekmar-xyz
   forProvider:

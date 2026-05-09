@@ -5,6 +5,7 @@ apiVersion: role.keycloak.crossplane.io/v1alpha1
 kind: Role
 metadata:
   name: algovectra-ssh-realm-role
+  namespace: crossplane-system
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:

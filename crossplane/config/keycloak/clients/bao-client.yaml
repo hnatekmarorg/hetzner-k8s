@@ -2,7 +2,11 @@ apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: Client
 metadata:
   name: bao-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
 spec:
+  deletionPolicy: Delete
   writeConnectionSecretToRef:
     namespace: crossplane-system
     name: bao-hnatekmar-xyz
@@ -24,6 +28,7 @@ apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientDefaultScopes
 metadata:
   name: bao-hnatekmar-xyz-default-scopes
+  namespace: crossplane-system
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:
@@ -45,6 +50,7 @@ apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientOptionalScopes
 metadata:
   name: bao-hnatekmar-xyz-optional-scopes
+  namespace: crossplane-system
   annotations:
     argocd.argoproj.io/sync-wave: "5"
 spec:

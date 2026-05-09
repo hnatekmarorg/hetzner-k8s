@@ -61,8 +61,26 @@ argocd:
       domain: argocd.hnatekmar.xyz
 
     configs:
+      params:
+        "server.insecure": "true"
+      rbac:
+        create: true
+        policy.csv: |
+          g, argocd-admins, role:admin
       cm:
+        admin.enabled: false
+        url: https://argocd.hnatekmar.xyz/argocd
         "url.path": "/argocd"
+        oidc.config: |
+          name: sso
+          issuer: https://sso.hnatekmar.xyz/realms/master
+          clientID: argocd-hnatekmar-xyz
+          clientSecret: $argocd-oidc-secret:clientSecret
+          requestedScopes:
+            - openid
+            - profile
+            - microprofile-jwt
+            - email
 
     server:
       ingress:
@@ -71,7 +89,12 @@ argocd:
         hosts:
           - argocd.hnatekmar.xyz
         annotations:
+          cert-manager.io/cluster-issuer: letsencrypt-prod
           konghq.com/strip-path: "true"
+        extraTls:
+          - hosts:
+              - argocd.hnatekmar.xyz
+            secretName: argocd-server-tls
 
       service:
         type: ClusterIP
@@ -100,6 +123,14 @@ argocd:
     # Use simple password for testing
     credentialTemplate:
       enabled: false
+
+  # External secret reference for OIDC client secret
+  # This secret is created by Crossplane from Keycloak
+  externalSecrets:
+    enabled: true
+    secretName: argocd-hnatekmar-xyz
+    secretNamespace: crossplane-system
+
   writeConnectionSecretToRef:
     name: "test-cluster"
     namespace: "crossplane-system"
