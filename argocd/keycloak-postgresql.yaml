@@ -21,6 +21,11 @@ spec:
           username: keycloak
           database: keycloak
         
+        image:
+          registry: docker.io
+          repository: bitnami/postgresql
+          tag: latest
+        
         primary:
           persistence:
             enabled: true
