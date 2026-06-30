@@ -40,28 +40,38 @@ This repository manages Kubernetes infrastructure using:
 ```
 .
 ├── argocd/                          # ArgoCD Application definitions
-│   ├── argocd/                      # ArgoCD self-managed deployment
-│   │   └── argocd.yaml
-│   ├── cert-manager/                # SSL/TLS certificate management
-│   │   ├── application.yaml
-│   │   └── cluster-issuer.yaml
-│   ├── configurations/              # Crossplane configurations
-│   │   └── crossplane-init.yaml
-│   ├── crossplane/                  # Crossplane deployment
-│   │   └── crossplane.yaml
-│   ├── digitalOcean/                # DigitalOcean cluster configs
-│   │   └── clusters/production.yaml
-│   ├── doks-cluster/                # DOKS cluster application
-│   │   └── application.yaml
-│   ├── external-secrets/            # External Secrets Operator
-│   │   └── application.yaml
-│   ├── keycloak.yaml                # Keycloak application
-│   ├── kong.yaml                    # Kong API gateway
-│   ├── kubernetes_ingress.yaml      # Kubernetes ingress controller
-│   ├── openbao/                     # OpenBao (Vault) Helm chart values
-│   │   ├── openbao.yaml
-│   │   └── values.yaml
-│   └── init.yaml                    # Root ArgoCD application
+│   ├── apps/                        # ArgoCD Application CRDs (child apps)
+│   │   ├── platform/                # Core platform services
+│   │   │   ├── argocd.yaml          # ArgoCD self-managed deployment
+│   │   │   ├── argocd-bootstrap.yaml# Bootstrap ArgoCD instance
+│   │   │   ├── cert-manager.yaml    # SSL/TLS certificate management
+│   │   │   ├── crossplane.yaml      # Crossplane deployment
+│   │   │   ├── external-secrets.yaml# External Secrets Operator
+│   │   │   └── kong.yaml            # Kong API gateway
+│   │   ├── services/                # Application services
+│   │   │   ├── keycloak.yaml        # Keycloak SSO
+│   │   │   ├── keycloak-postgresql.yaml  # Keycloak database
+│   │   │   └── openbao.yaml         # OpenBao (Vault)
+│   │   └── config/                  # Crossplane configuration
+│   │       └── crossplane-init.yaml # Providers, configs, secrets
+│   ├── manifests/                   # Plain Kubernetes manifests
+│   │   ├── argocd-ingress.yaml
+│   │   ├── argocd-external-secret.yaml
+│   │   ├── argocd-bootstrap-external-secret.yaml
+│   │   ├── kubernetes_ingress.yaml
+│   │   ├── label-oidc-secret.yaml
+│   │   ├── label-oidc-secret-job.yaml
+│   │   ├── cert-manager/
+│   │   │   └── letsencrypt-prod.yaml
+│   │   └── digitalocean/
+│   │       └── production.yaml
+│   ├── values/                      # Helm values files
+│   │   ├── keycloak-values.yaml
+│   │   └── openbao/
+│   │       └── values.yaml
+│   ├── appsets/                     # ArgoCD ApplicationSets
+│   │   └── README.md
+│   └── README.md                    # Sync-wave documentation
 ├── charts/                          # Custom Helm charts
 │   ├── doks-cluster/                # DOKS cluster chart
 │   │   ├── Chart.yaml

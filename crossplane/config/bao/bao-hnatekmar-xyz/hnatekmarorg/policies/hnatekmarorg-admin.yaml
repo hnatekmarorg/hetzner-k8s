@@ -10,6 +10,21 @@ spec:
   forProvider:
     name: hnatekmarorg-admin
     policy: |
+      path "hnatekmarorg/data/*" {
+        capabilities = ["create", "read", "update", "delete", "list"]
+      }
+      path "hnatekmarorg/metadata/*" {
+        capabilities = ["create", "read", "update", "delete", "list"]
+      }
+      path "hnatekmarorg/delete/*" {
+        capabilities = ["update"]
+      }
+      path "hnatekmarorg/destroy/*" {
+        capabilities = ["update"]
+      }
+      path "hnatekmarorg/subscribe/*" {
+        capabilities = ["read"]
+      }
       path "hnatekmarorg-ssh/*" {
         capabilities = ["read", "list"]
       }

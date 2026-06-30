@@ -1,0 +1,13 @@
+# kv-v2 mount for hnatekmarorg secrets (GitHub, organization-wide configs)
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: hnatekmarorg
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    path: hnatekmarorg
+    type: kv-v2
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

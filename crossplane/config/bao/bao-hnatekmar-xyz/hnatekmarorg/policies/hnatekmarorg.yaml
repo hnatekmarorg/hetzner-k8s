@@ -10,6 +10,12 @@ spec:
   forProvider:
     name: hnatekmarorg
     policy: |
+      path "hnatekmarorg/data/*" {
+        capabilities = ["read", "list"]
+      }
+      path "hnatekmarorg/metadata/*" {
+        capabilities = ["read", "list"]
+      }
       path "hnatekmarorg-ssh/sign/user" {
         capabilities = ["create", "update"]
       }

@@ -37,7 +37,7 @@ spec:
       helm:
         releaseName: openbao
         valueFiles:
-          - $repo/argocd/openbao/values.yaml
+          - $repo/argocd/values/openbao/values.yaml
     - repoURL: "https://github.com/hnatekmarorg/hetzner-k8s.git"
       targetRevision: main
       ref: repo

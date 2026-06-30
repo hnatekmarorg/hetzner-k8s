@@ -14,7 +14,7 @@ spec:
       helm:
         releaseName: keycloakx
         valueFiles:
-          - $values/argocd/keycloak-values.yaml
+          - $values/argocd/values/keycloak-values.yaml
     - repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
       targetRevision: main
       ref: values
