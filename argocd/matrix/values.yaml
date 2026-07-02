@@ -1,0 +1,69 @@
+# Matrix Synapse Helm values
+# Chart: ananace-charts/matrix-synapse
+# See: https://gitlab.com/ananace/charts
+
+# The Matrix server domain - this becomes the part after @user: in MXIDs
+serverName: matrix.hnatekmar.xyz
+
+# Ingress via Kong with cert-manager TLS
+ingress:
+  enabled: true
+  className: kong
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  csHosts:
+    - matrix.hnatekmar.xyz
+  hosts:
+    - matrix.hnatekmar.xyz
+  tls:
+    - secretName: matrix-tls-secret
+      hosts:
+        - matrix.hnatekmar.xyz
+
+# Media repository persistence
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 10Gi
+
+# Bundled PostgreSQL database
+postgresql:
+  enabled: true
+  image:
+    repository: bitnamilegacy/postgresql
+  auth:
+    password: synapse
+    username: synapse
+    database: synapse
+  primary:
+    persistence:
+      storageClass: local-path
+      size: 16Gi
+
+# Well-known delegation for Matrix client discovery
+wellknown:
+  enabled: true
+  replicaCount: 1
+  server:
+    m.server: matrix.hnatekmar.xyz:443
+  client:
+    m.homeserver:
+      base_url: https://matrix.hnatekmar.xyz
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+
+# Synapse pod resources and tolerations
+synapse:
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule

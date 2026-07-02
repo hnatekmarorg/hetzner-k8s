@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: matrix-synapse
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://gitlab.com/api/v4/projects/ananace%2Fcharts/packages/helm/stable
+      chart: matrix-synapse
+      targetRevision: 3.12.30
+      helm:
+        releaseName: matrix-synapse
+        valueFiles:
+          - $repo/argocd/matrix/values.yaml
+    - repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+      targetRevision: main
+      ref: repo
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: matrix
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
