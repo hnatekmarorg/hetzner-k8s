@@ -1,0 +1,14 @@
+---
+# kv-v2 mount for hermes agent secrets
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: hermes
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    path: hermes
+    type: kv-v2

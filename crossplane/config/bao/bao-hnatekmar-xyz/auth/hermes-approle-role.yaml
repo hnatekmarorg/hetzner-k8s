@@ -1,0 +1,26 @@
+# AppRole role for hermes agent machine identity
+apiVersion: approle.vault.upbound.io/v1alpha1
+kind: AuthBackendRole
+metadata:
+  name: hermes-approle-role
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  forProvider:
+    backendRef:
+      name: approle
+    roleName: hermes-agent
+    tokenPolicies:
+      - hermes-agent
+    tokenTtl: 1800
+    tokenMaxTtl: 3600
+    tokenType: "service"
+    bindSecretId: true
+    secretIdNumUses: 0
+    secretIdTtl: 0
+  writeConnectionSecretToRef:
+    name: hermes-approle-roleid
+    namespace: crossplane-system
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

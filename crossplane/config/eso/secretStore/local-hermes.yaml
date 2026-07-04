@@ -1,0 +1,18 @@
+# Hermes agent mount at OpenBao
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: local-hermes
+spec:
+  provider:
+    vault:
+      server: https://bao.hnatekmar.xyz
+      path: "hermes"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          serviceAccountRef:
+            name: external-secrets
+            namespace: external-secrets
+          role: "bao-hnatekmar-xyz"

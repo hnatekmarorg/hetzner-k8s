@@ -1,23 +1,21 @@
+# Auth role for hermes agent — machine identity via Kubernetes SA
 apiVersion: kubernetes.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: bao-hnatekmar-xyz
+  name: hermes-agent
   namespace: crossplane-system
 spec:
   forProvider:
     backendRef:
       name: bao-hnatekmar-xyz
-    roleName: bao-hnatekmar-xyz
+    roleName: hermes-agent
     boundServiceAccountNames:
-      - external-secrets
+      - hermes
     boundServiceAccountNamespaces:
-      - external-secrets
+      - hermes
     tokenPolicies:
-      - clusters-secret-creator
-      - devops-github-reader
       - hermes-agent
     aliasNameSource: serviceaccount_name
-    # Token TTL limits to prevent accumulation
     tokenTtl: 1800
     tokenMaxTtl: 3600
     tokenType: "service"

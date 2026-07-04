@@ -1,0 +1,12 @@
+# AppRole auth backend for machine identity
+apiVersion: auth.vault.upbound.io/v1alpha1
+kind: Backend
+metadata:
+  name: approle
+  namespace: crossplane-system
+spec:
+  forProvider:
+    type: approle
+    path: approle
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

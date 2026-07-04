@@ -16,3 +16,9 @@ spec:
       path "algovectra/metadata/*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
       }
+      path "hermes/data/*" {
+        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
+      }
+      path "hermes/metadata/*" {
+        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
+      }

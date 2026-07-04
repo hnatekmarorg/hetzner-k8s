@@ -1,18 +1,16 @@
+# Policy for hermes agent — full CRUD on hermes KV2 path
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: hnatekmarorg
+  name: hermes-agent
   namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: hnatekmarorg
+    name: hermes-agent
     policy: |
-      path "hnatekmarorg-ssh/sign/user" {
-        capabilities = ["create", "update"]
-      }
       path "hermes/data/*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
       }
