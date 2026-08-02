@@ -1,0 +1,9 @@
+apiVersion: v2
+name: baikal
+description: Baikal CalDAV/CardDAV server (sabre/dav based)
+
+type: application
+
+version: 0.1.0
+
+appVersion: "0.10.1"
