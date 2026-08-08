@@ -8,13 +8,13 @@ This document describes how to configure OpenBao (Vault) resources using Crosspl
 
 Configures an authentication method in OpenBao. The most common is OIDC authentication for SSO integration.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/sso/backend.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/auth/oidc.yaml`
 
 ```yaml
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackend
 metadata:
-  name: sso
+  name: oidc
   namespace: crossplane-system
 spec:
   providerConfigRef:
@@ -22,7 +22,6 @@ spec:
   forProvider:
     path: oidc
     type: oidc
-    defaultRole: sso
     oidcClientId: bao-hnatekmar-xyz
     oidcClientSecretSecretRef:
       key: attribute.client_secret
@@ -34,7 +33,6 @@ spec:
 **Key Fields**:
 - `forProvider.path`: Mount path in OpenBao (e.g., `oidc`)
 - `forProvider.type`: Auth method type (`oidc`, `kubernetes`, `userpass`, etc.)
-- `forProvider.defaultRole`: Default role to use if none is specified
 - `oidcClientId`: Client ID from Keycloak
 - `oidcClientSecretSecretRef`: Reference to secret containing client secret
 - `oidcDiscoveryUrl`: Keycloak OIDC discovery URL
@@ -43,31 +41,31 @@ spec:
 
 Defines a role within an OIDC auth backend, mapping Keycloak groups/claims to OpenBao policies and token settings.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/sso/roles/hnatekmarorg-base.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/roles/oidc/hnatekmarorg.yaml`
 
 ```yaml
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-hnatekmarorg-base
+  name: hnatekmarorg
   namespace: crossplane-system
 spec:
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
     backendRef:
-      name: sso
+      name: oidc
     userClaim: email
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: sso-hnatekmarorg-base
+    roleName: hnatekmarorg
     roleType: oidc
     groupsClaim: groups
     boundClaims:
       groups: "hnatekmarorg-base"
     tokenPolicies:
-      - hnatekmarorg-base
+      - hnatekmarorg
     tokenTtl: 3600
     tokenMaxTtl: 14400
     tokenType: "service"
@@ -91,20 +89,20 @@ spec:
 
 Defines an OpenBao policy that controls access to secrets and paths.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/hnatekmarorg/policies/base.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/hnatekmarorg/policies/hnatekmarorg.yaml`
 
 ```yaml
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: hnatekmarorg-base
+  name: hnatekmarorg
   namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: hnatekmarorg-base
+    name: hnatekmarorg
     policy: |
       path "hnatekmarorg-ssh/sign/user" {
         capabilities = ["create", "update"]
@@ -131,20 +129,22 @@ path "<path>" {
 
 Configures an SSH secrets engine for signing SSH certificates.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/hnatekmarorg/ssh/ssh-backend.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/hnatekmarorg/ssh/mount.yaml`
 
 ```yaml
-apiVersion: jwt.vault.upbound.io/v1alpha1
-kind: SecretsEngine
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
 metadata:
   name: hnatekmarorg-ssh
   namespace: crossplane-system
 spec:
-  providerConfigRef:
-    name: bao-hnatekmar-xyz
+  deletionPolicy: Delete
   forProvider:
     path: hnatekmarorg-ssh
     type: ssh
+    description: "SSH Secret Engine for hnatekmarorg managed by Crossplane"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
 ```
 
 ### Kubernetes Secrets Engine Config

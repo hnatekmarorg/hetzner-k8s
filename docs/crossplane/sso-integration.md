@@ -37,13 +37,13 @@ OpenBao's OIDC auth backend validates the token and maps the user to an OIDC rol
 - **Bound Claims**: Claims that must match (typically a specific group)
 - **Token Policies**: OpenBao policies to assign to the token
 
-**Example**: `sso-hnatekmarorg-base` OIDC role requires `boundClaims.groups = "hnatekmarorg-base"` and assigns `hnatekmarorg-base` policy
+**Example**: `hnatekmarorg` OIDC role requires `boundClaims.groups = "hnatekmarorg-base"` and assigns `hnatekmarorg` policy
 
 ### 5. Policy-Based Access
 
 The assigned OpenBao policy controls what secrets the user can access.
 
-**Example**: `hnatekmarorg-base` policy allows signing SSH certificates under `hnatekmarorg-ssh/sign/user`
+**Example**: `hnatekmarorg` policy allows signing SSH certificates under `hnatekmarorg-ssh/sign/user`
 
 ## Configuration Steps
 
@@ -164,13 +164,13 @@ spec:
 
 Set up OIDC authentication in OpenBao using the Keycloak client credentials.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/sso/backend.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/auth/oidc.yaml`
 
 ```yaml
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackend
 metadata:
-  name: sso
+  name: oidc
   namespace: crossplane-system
 spec:
   providerConfigRef:
@@ -178,7 +178,6 @@ spec:
   forProvider:
     path: oidc
     type: oidc
-    defaultRole: sso
     oidcClientId: bao-hnatekmar-xyz
     oidcClientSecretSecretRef:
       key: attribute.client_secret
@@ -191,26 +190,26 @@ spec:
 
 Define an OIDC role that maps Keycloak groups to OpenBao policies.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/sso/roles/hnatekmarorg-base.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/roles/oidc/hnatekmarorg.yaml`
 
 ```yaml
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-hnatekmarorg-base
+  name: hnatekmarorg
   namespace: crossplane-system
 spec:
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
     backendRef:
-      name: sso
+      name: oidc
     userClaim: email
     groupsClaim: groups
     boundClaims:
       groups: "hnatekmarorg-base"
     tokenPolicies:
-      - hnatekmarorg-base
+      - hnatekmarorg
     tokenTtl: 3600
     tokenMaxTtl: 14400
     tokenType: "service"
@@ -224,20 +223,20 @@ spec:
 
 Define the actual access control for this level of users.
 
-**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/hnatekmarorg/policies/base.yaml`
+**Example**: `crossplane/config/bao/bao-hnatekmar-xyz/hnatekmarorg/policies/hnatekmarorg.yaml`
 
 ```yaml
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: hnatekmarorg-base
+  name: hnatekmarorg
   namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: hnatekmarorg-base
+    name: hnatekmarorg
     policy: |
       path "hnatekmarorg-ssh/sign/user" {
         capabilities = ["create", "update"]
@@ -250,8 +249,8 @@ For consistency across the integration chain, use matching names:
 
 - **Keycloak Group**: `hnatekmarorg-base`
 - **Keycloak Realm Role**: `hnatekmarorg-base`
-- **OpenBao OIDC Role**: `sso-hnatekmarorg-base` (prefixed with auth backend name)
-- **OpenBao Policy**: `hnatekmarorg-base`
+- **OpenBao OIDC Role**: `hnatekmarorg`
+- **OpenBao Policy**: `hnatekmarorg`
 
 ## Testing the Integration
 
@@ -263,9 +262,9 @@ For consistency across the integration chain, use matching names:
 
 2. **Verify OpenBao Configuration**:
    ```bash
-   kubectl get authbackend sso -n crossplane-system
-   kubectl get authbackendrole sso-hnatekmarorg-base -n crossplane-system
-   kubectl get policy hnatekmarorg-base -n crossplane-system
+   kubectl get authbackend oidc -n crossplane-system
+   kubectl get authbackendrole hnatekmarorg -n crossplane-system
+   kubectl get policy hnatekmarorg -n crossplane-system
    ```
 
 3. **Test SSO Login**: Access `https://bao.hnatekmar.xyz` and verify redirection to Keycloak

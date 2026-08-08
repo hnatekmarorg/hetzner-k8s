@@ -115,7 +115,7 @@ spec:
 
 Create an OIDC role in OpenBao that maps Keycloak group to OpenBao policies.
 
-**File**: `crossplane/config/bao/bao-hnatekmar-xyz/sso/roles/myproject-base.yaml`
+**File**: `crossplane/config/bao/bao-hnatekmar-xyz/roles/oidc/myproject.yaml`
 
 ```yaml
 ---
@@ -124,25 +124,25 @@ Create an OIDC role in OpenBao that maps Keycloak group to OpenBao policies.
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: sso-myproject-base
+  name: myproject
   namespace: crossplane-system
 spec:
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
     backendRef:
-      name: sso
+      name: oidc
     userClaim: email
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: sso-myproject-base
+    roleName: myproject
     roleType: oidc
     groupsClaim: groups
     boundClaims:
       groups: "myproject-base"
     tokenPolicies:
-      - myproject-base
+      - myproject
     tokenTtl: 3600
     tokenMaxTtl: 14400
     tokenType: "service"
@@ -152,20 +152,20 @@ spec:
 
 Define what secrets the project can access.
 
-**File**: `crossplane/config/bao/bao-hnatekmar-xyz/myproject/policies/base.yaml`
+**File**: `crossplane/config/bao/bao-hnatekmar-xyz/myproject/policies/myproject.yaml`
 
 ```yaml
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: myproject-base
+  name: myproject
   namespace: crossplane-system
 spec:
   deletionPolicy: Delete
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
-    name: myproject-base
+    name: myproject
     policy: |
       path "myproject-ssh/sign/user" {
         capabilities = ["create", "update"]
@@ -201,20 +201,22 @@ spec:
 
 If the project requires SSH certificate signing:
 
-**File**: `crossplane/config/bao/bao-hnatekmar-xyz/myproject/ssh/ssh-backend.yaml`
+**File**: `crossplane/config/bao/bao-hnatekmar-xyz/myproject/ssh/mount.yaml`
 
 ```yaml
-apiVersion: jwt.vault.upbound.io/v1alpha1
-kind: SecretsEngine
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
 metadata:
   name: myproject-ssh
   namespace: crossplane-system
 spec:
-  providerConfigRef:
-    name: bao-hnatekmar-xyz
+  deletionPolicy: Delete
   forProvider:
     path: myproject-ssh
     type: ssh
+    description: "SSH Secret Engine for myproject managed by Crossplane"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
 ```
 
 You may also need to configure SSH roles and CA keys. This is typically done directly in OpenBao or through additional Crossplane resources.
@@ -227,8 +229,8 @@ Apply the new resources:
 kubectl apply -f crossplane/config/keycloak/groups/myproject-base.yaml
 kubectl apply -f crossplane/config/keycloak/roles/myproject-base-realm.yaml
 kubectl apply -f crossplane/config/keycloak/roles/myproject-base-mapping.yaml
-kubectl apply -f crossplane/config/bao/bao-hnatekmar-xyz/sso/roles/myproject-base.yaml
-kubectl apply -f crossplane/config/bao/bao-hnatekmar-xyz/myproject/policies/base.yaml
+kubectl apply -f crossplane/config/bao/bao-hnatekmar-xyz/roles/oidc/myproject.yaml
+kubectl apply -f crossplane/config/bao/bao-hnatekmar-xyz/myproject/policies/myproject.yaml
 ```
 
 Verify resources are created:
@@ -236,7 +238,7 @@ Verify resources are created:
 ```bash
 kubectl get group myproject-base -n crossplane-system
 kubectl get role myproject-base-realm-role -n crossplane-system
-kubectl get authbackendrole sso-myproject-base -n crossplane-system
+kubectl get authbackendrole myproject -n crossplane-system
 kubectl get policy myproject-base -n crossplane-system
 ```
 
@@ -253,7 +255,7 @@ For admin-level access, repeat the steps replacing `base` with `admin`:
 - Create `myproject-admin` group
 - Create `myproject-admin` realm role
 - Map group to role
-- Create `sso-myproject-admin` OIDC role with broader privileges
+- Create `myproject-admin` OIDC role with broader privileges
 - Create `myproject-admin` policy with additional capabilities
 
 Example admin policy:
@@ -275,7 +277,7 @@ To remove a project's SSO access:
 kubectl delete group myproject-base -n crossplane-system
 kubectl delete role myproject-base-realm-role -n crossplane-system
 kubectl delete group.roles myproject-base-roles -n crossplane-system
-kubectl delete authbackendrole sso-myproject-base -n crossplane-system
+kubectl delete authbackendrole myproject -n crossplane-system
 kubectl delete policy myproject-base -n crossplane-system
 ```
 
