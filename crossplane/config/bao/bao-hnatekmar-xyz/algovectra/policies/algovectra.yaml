@@ -1,7 +1,7 @@
 apiVersion: vault.vault.upbound.io/v1alpha1
 kind: Policy
 metadata:
-  name: algovectra-main
+  name: algovectra
   namespace: crossplane-system
 spec:
   deletionPolicy: Delete
@@ -10,15 +10,12 @@ spec:
   forProvider:
     name: algovectra
     policy: |
+      # Algovectra tenant secrets — scoped to this mount only.
+      # Cross-mount access (e.g. hermes) is NOT granted here; use a dedicated
+      # <tenant>-agent identity with its own scoped policy if needed.
       path "algovectra/data/*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
       }
       path "algovectra/metadata/*" {
-        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
-      }
-      path "hermes/data/*" {
-        capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
-      }
-      path "hermes/metadata/*" {
         capabilities = ["create", "read", "update", "patch", "delete", "list", "scan"]
       }

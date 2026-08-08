@@ -1,7 +1,7 @@
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackend
 metadata:
-  name: sso
+  name: oidc
   namespace: crossplane-system
 spec:
   providerConfigRef:

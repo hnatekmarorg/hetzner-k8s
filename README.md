@@ -146,10 +146,7 @@ export BAO_TOKEN=<root-token>
 
 ### Optional Secrets
 
-6. **SSO Configuration** (sso path)
-   ```bash
-   bao kv put sso/keycloak/client-secret client-secret=<keycloak-client-secret>
-   ```
+6. **SSO / OIDC client secret** — provisioned by the Keycloak client resource (`crossplane/config/keycloak/clients/bao-client.yaml`), not a KV secret. The `sso/keycloak/client-secret` KV path no longer exists.
 
 ### Verification
 

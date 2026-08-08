@@ -152,3 +152,19 @@ spec:
 Configures a Kubernetes-based secrets engine for injecting secrets into pods.
 
 **Note**: This is typically configured outside of Crossplane for cluster-specific access.
+
+---
+
+## Secret Organization Convention
+
+The OpenBao config lives at `crossplane/config/bao/bao-hnatekmar-xyz/`. Follow these rules when adding/modifying resources:
+
+1. **Directory = tenant.** One directory per KV mount/tenant holding its own `mount.yaml`, `policies/`, optional `ssh/`, and a `README.md` acting as that mount's **secret registry** (paths + purpose + consumers — never values).
+2. **Auth** lives centrally: `auth/` for backends, `roles/{kubernetes,approle,oidc}/` for roles. File name == resource identity.
+3. **Naming:** `metadata.name` == `forProvider.name` == file name.
+4. **Policy scoping:** policies grant their **own mount only**. Cross-mount access uses a dedicated reader policy + role — never widen a tenant policy (e.g. `algovectra` must not grant `hermes/*`).
+5. **Per-tenant agents:** each tenant gets a `*-agent` identity (kubernetes SA + policy) scoped to its own mount. Add agents for new consumers instead of widening existing roles.
+6. **KV path scheme:** `<mount>/<service>/<secret>` (CLI). The internal `/data/` segment is a CLI↔API detail, not part of the documented path.
+7. **Every new secret** gets a registry row + an explicit policy gate.
+
+**Argo/Crossplane caveat:** renaming a resource = delete + recreate. Prefer file moves (no-ops) over renames; keep login identities (`roleName` for approle/oidc, kubernetes role names referenced by ESO stores) stable unless deliberately recreated.

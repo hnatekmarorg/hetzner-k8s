@@ -1,28 +1,28 @@
----
-# SSO Role for hnatekmarorg users
-# Users with hnatekmarorg-base group get the hnatekmarorg policy
 apiVersion: jwt.vault.upbound.io/v1alpha1
 kind: AuthBackendRole
 metadata:
-  name: hnatekmarorg
+  name: admin
   namespace: crossplane-system
 spec:
   providerConfigRef:
     name: bao-hnatekmar-xyz
   forProvider:
     backendRef:
-      name: sso
+      name: oidc
     userClaim: email
     allowedRedirectUris:
       - https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback
       - http://localhost:8250/oidc/callback
-    roleName: hnatekmarorg
+    roleName: admin
     roleType: oidc
     groupsClaim: groups
+    oidcScopes:
+      - "openid"
+      - "microprofile-jwt"
     boundClaims:
-      groups: "hnatekmarorg-base"
+      groups: "admin"
     tokenPolicies:
-      - hnatekmarorg
-    tokenTtl: 3600
-    tokenMaxTtl: 14400
+      - admin-identity
+    tokenTtl: 86400
+    tokenMaxTtl: 86400
     tokenType: "service"
