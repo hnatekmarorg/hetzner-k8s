@@ -291,6 +291,7 @@ For detailed Crossplane resource patterns and configurations, see:
     - `ClientOptionalScopes` - Optional scopes that can be requested (sync-wave: "5")
   - See [Client Types](docs/crossplane/keycloak.md#client-types) for CONFIDENTIAL vs PUBLIC client configurations
 - **[OpenBao Configuration](docs/crossplane/openbao.md)** - Auth backends, secrets engines, and policies
+- **[SSO Overview](docs/crossplane/sso-overview.md)** - Cross-service SSO reference (OpenBao, ArgoCD, Keycloak)
 - **[SSO Integration](docs/crossplane/sso-integration.md)** - Complete Keycloak ↔ OpenBao integration guide
 - **[Provider Configurations](docs/crossplane/provider-configs.md)** - Setting up Crossplane providers
 - **[Crossplane Initialization](docs/crossplane/initialization.md)** - Provider and function installation

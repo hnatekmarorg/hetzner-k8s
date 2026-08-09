@@ -66,7 +66,7 @@ argocd:
       rbac:
         create: true
         policy.csv: |
-          g, argocd-admins, role:admin
+          g, hnatekmarorg-admin, role:admin
       cm:
         admin.enabled: false
         url: https://argocd.hnatekmar.xyz/argocd

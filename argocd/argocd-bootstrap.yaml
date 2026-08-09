@@ -26,7 +26,7 @@ spec:
           rbac:
             create: true
             policy.csv: |
-              g, admin, role:admin
+              g, hnatekmarorg-admin, role:admin
           cm:
             admin.enabled: false
             url: https://argocd-bootstrap.hnatekmar.xyz

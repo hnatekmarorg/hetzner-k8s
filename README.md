@@ -229,6 +229,7 @@ If secrets are not syncing:
 
 - [OpenBao Configuration Guide](docs/crossplane/openbao.md)
 - [Keycloak Configuration Guide](docs/crossplane/keycloak.md)
+- [SSO Overview](docs/crossplane/sso-overview.md) - Cross-service SSO reference (OpenBao, ArgoCD, Keycloak)
 - [SSO Integration Guide](docs/crossplane/sso-integration.md)
 - [External Secrets Configuration](docs/crossplane/external-secrets.md)
 

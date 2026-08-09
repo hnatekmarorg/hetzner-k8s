@@ -1,0 +1,21 @@
+---
+# Map hnatekmarorg-admin group to the built-in Keycloak admin role
+# Members of this group get full access to the Keycloak admin console
+apiVersion: group.keycloak.crossplane.io/v1alpha1
+kind: Roles
+metadata:
+  name: hnatekmarorg-admin-keycloak-admin-roles
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    groupIdRef:
+      name: hnatekmarorg-admin
+    realmId: master
+    roleIdsRefs:
+      - name: admin
+    exhaustive: true
