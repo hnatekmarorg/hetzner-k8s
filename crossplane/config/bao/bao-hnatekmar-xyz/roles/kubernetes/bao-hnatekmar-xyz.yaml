@@ -13,6 +13,7 @@ spec:
     boundServiceAccountNamespaces:
       - external-secrets
     tokenPolicies:
+      - algovectra
       - clusters-secret-creator
       - devops-github-reader
       - hermes-agent
