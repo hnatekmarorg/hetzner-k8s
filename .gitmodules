@@ -1,0 +1,3 @@
+[submodule "apps/algovectra"]
+	path = apps/algovectra
+	url = git@github.com:hnatekmarorg/algovectra.git
