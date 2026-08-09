@@ -75,7 +75,7 @@ argocd:
           name: sso
           issuer: https://sso.hnatekmar.xyz/realms/master
           clientID: argocd-hnatekmar-xyz
-          clientSecret: $argocd-oidc-secret:clientSecret
+          clientSecret: $argocd-hnatekmar-xyz:attribute.client_secret
           requestedScopes:
             - openid
             - profile
@@ -124,12 +124,6 @@ argocd:
     credentialTemplate:
       enabled: false
 
-  # External secret reference for OIDC client secret
-  # This secret is created by Crossplane from Keycloak
-  externalSecrets:
-    enabled: true
-    secretName: argocd-hnatekmar-xyz
-    secretNamespace: crossplane-system
 
   writeConnectionSecretToRef:
     name: "test-cluster"
