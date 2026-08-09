@@ -90,10 +90,3 @@ spec:
                   key: password
             - name: TB_SERVICE_BASE_URL
               value: "https://thingsboard.hnatekmar.xyz"
-          resources:
-            requests:
-              cpu: 500m
-              memory: 1Gi
-            limits:
-              cpu: "2"
-              memory: 2Gi
