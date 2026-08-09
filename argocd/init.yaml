@@ -18,6 +18,11 @@ spec:
         - /status
         - /spec/dataFrom
         - /spec/target
+      # Ignore server-defaulted remoteRef fields so they don't cause OutOfSync
+      jqPathExpressions:
+        - .spec.data[]?.remoteRef.conversionStrategy
+        - .spec.data[]?.remoteRef.decodingStrategy
+        - .spec.data[]?.remoteRef.metadataPolicy
   syncPolicy:
     syncOptions:
       - ServerSideApply=true
