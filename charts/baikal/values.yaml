@@ -1,0 +1,48 @@
+# Baikal CalDAV/CardDAV Helm values
+# Image: ckulka/baikal (Apache variant) — coollabsio/baikal does not exist on Docker Hub
+
+replicaCount: 1
+
+image:
+  repository: ckulka/baikal
+  tag: "0.10.1"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: http
+
+ingress:
+  enabled: true
+  className: kong
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: baikal.hnatekmar.xyz
+  tlsSecretName: baikal-tls-secret
+
+persistence:
+  enabled: true
+  storageClass: local-path
+  size: 2Gi
+  accessMode: ReadWriteOnce
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+env:
+  - name: BAIKAL_SERVERNAME
+    value: baikal.hnatekmar.xyz
+
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
