@@ -1,99 +1,99 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: thingsboard
-  namespace: thingsboard
-  labels:
-    app.kubernetes.io/name: thingsboard
-    app.kubernetes.io/component: tb-node
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: thingsboard
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: thingsboard
-        app.kubernetes.io/component: tb-node
-    spec:
-      # Host network exposes the transport ports directly on the node so remote
-      # devices can connect without a LoadBalancer (single-node cluster).
-      hostNetwork: true
-      tolerations:
-        - key: node-role.kubernetes.io/control-plane
-          operator: Exists
-          effect: NoSchedule
-        - key: node-role.kubernetes.io/master
-          operator: Exists
-          effect: NoSchedule
-      containers:
-        - name: tb-node
-          image: thingsboard/tb-node:4.2.0
-          ports:
-            - name: http
-              containerPort: 8080
-            - name: rpc
-              containerPort: 7070
-            - name: mqtt
-              containerPort: 1883
-            - name: mqtt-tls
-              containerPort: 8883
-            # CoAP transport listens on the UDP range 5683-5688
-            - name: coap
-              containerPort: 5683
-              protocol: UDP
-            - name: coap-5684
-              containerPort: 5684
-              protocol: UDP
-            - name: coap-5685
-              containerPort: 5685
-              protocol: UDP
-            - name: coap-5686
-              containerPort: 5686
-              protocol: UDP
-            - name: coap-5687
-              containerPort: 5687
-              protocol: UDP
-            - name: coap-5688
-              containerPort: 5688
-              protocol: UDP
-          env:
-            # Telemetry and event data retention
-            - name: SQL_TTL_TS_ENABLED
-              value: "true"
-            - name: SQL_TTL_TS_EXECUTION_INTERVAL
-              value: "86400000"
-            - name: SQL_TTL_TS_TS_KEY_VALUE_TTL
-              value: "7776000"
-            - name: SQL_TTL_EVENTS_ENABLED
-              value: "true"
-            - name: SQL_TTL_EVENTS_EVENTS_TTL
-              value: "2592000"
-            - name: SQL_TTL_EVENTS_DEBUG_EVENTS_TTL
-              value: "172800"
-            # External PostgreSQL database (DigitalOcean Managed DB)
-            - name: SPRING_DATASOURCE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: thingsboard-db-creds
-                  key: url
-            - name: SPRING_DATASOURCE_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: thingsboard-db-creds
-                  key: username
-            - name: SPRING_DATASOURCE_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: thingsboard-db-creds
-                  key: password
-            - name: TB_SERVICE_BASE_URL
-              value: "https://thingsboard.hnatekmar.xyz"
-          resources:
-            requests:
-              cpu: 500m
-              memory: 1Gi
-            limits:
-              cpu: "2"
-              memory: 2Gi
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+  # name: thingsboard
+  # namespace: thingsboard
+  # labels:
+    # app.kubernetes.io/name: thingsboard
+    # app.kubernetes.io/component: tb-node
+# spec:
+  # replicas: 1
+  # selector:
+    # matchLabels:
+      # app.kubernetes.io/name: thingsboard
+  # template:
+    # metadata:
+      # labels:
+        # app.kubernetes.io/name: thingsboard
+        # app.kubernetes.io/component: tb-node
+    # spec:
+     #  # Host network exposes the transport ports directly on the node so remote
+     #  # devices can connect without a LoadBalancer (single-node cluster).
+      # hostNetwork: true
+      # tolerations:
+        # - key: node-role.kubernetes.io/control-plane
+          # operator: Exists
+          # effect: NoSchedule
+        # - key: node-role.kubernetes.io/master
+          # operator: Exists
+          # effect: NoSchedule
+      # containers:
+        # - name: tb-node
+          # image: thingsboard/tb-node:4.2.0
+          # ports:
+            # - name: http
+              # containerPort: 8080
+            # - name: rpc
+              # containerPort: 7070
+            # - name: mqtt
+              # containerPort: 1883
+            # - name: mqtt-tls
+              # containerPort: 8883
+           #  # CoAP transport listens on the UDP range 5683-5688
+            # - name: coap
+              # containerPort: 5683
+              # protocol: UDP
+            # - name: coap-5684
+              # containerPort: 5684
+              # protocol: UDP
+            # - name: coap-5685
+              # containerPort: 5685
+              # protocol: UDP
+            # - name: coap-5686
+              # containerPort: 5686
+              # protocol: UDP
+            # - name: coap-5687
+              # containerPort: 5687
+              # protocol: UDP
+            # - name: coap-5688
+              # containerPort: 5688
+              # protocol: UDP
+          # env:
+           #  # Telemetry and event data retention
+            # - name: SQL_TTL_TS_ENABLED
+              # value: "true"
+            # - name: SQL_TTL_TS_EXECUTION_INTERVAL
+              # value: "86400000"
+            # - name: SQL_TTL_TS_TS_KEY_VALUE_TTL
+              # value: "7776000"
+            # - name: SQL_TTL_EVENTS_ENABLED
+              # value: "true"
+            # - name: SQL_TTL_EVENTS_EVENTS_TTL
+              # value: "2592000"
+            # - name: SQL_TTL_EVENTS_DEBUG_EVENTS_TTL
+              # value: "172800"
+           #  # External PostgreSQL database (DigitalOcean Managed DB)
+            # - name: SPRING_DATASOURCE_URL
+              # valueFrom:
+                # secretKeyRef:
+                  # name: thingsboard-db-creds
+                  # key: url
+            # - name: SPRING_DATASOURCE_USERNAME
+              # valueFrom:
+                # secretKeyRef:
+                  # name: thingsboard-db-creds
+                  # key: username
+            # - name: SPRING_DATASOURCE_PASSWORD
+              # valueFrom:
+                # secretKeyRef:
+                  # name: thingsboard-db-creds
+                  # key: password
+            # - name: TB_SERVICE_BASE_URL
+              # value: "https://thingsboard.hnatekmar.xyz"
+          # resources:
+            # requests:
+              # cpu: 500m
+              # memory: 1Gi
+            # limits:
+              # cpu: "2"
+              # memory: 2Gi
