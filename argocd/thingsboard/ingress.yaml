@@ -1,31 +1,26 @@
 ---
-# Ingress for ThingsBoard - TEMPORARILY DISABLED
-# Re-enabled once the TLS certificate (thingsboard.hnatekmar.xyz) can be issued.
-# Blocked: cert-manager HTTP-01 challenge stays pending, kong can't fetch the TLS
-# secret, and ArgoCD's init app sync waits on this ingress's health.
-#
-# apiVersion: networking.k8s.io/v1
-# kind: Ingress
-# metadata:
-#   name: thingsboard
-#   namespace: thingsboard
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "2"
-#     cert-manager.io/cluster-issuer: letsencrypt-prod
-# spec:
-#   ingressClassName: kong
-#   tls:
-#     - hosts:
-#         - thingsboard.hnatekmar.xyz
-#       secretName: thingsboard-tls-secret
-#   rules:
-#     - host: thingsboard.hnatekmar.xyz
-#       http:
-#         paths:
-#           - path: /
-#             pathType: Prefix
-#             backend:
-#               service:
-#                 name: thingsboard
-#                 port:
-#                   number: 8080
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: thingsboard
+  namespace: thingsboard
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: kong
+  tls:
+    - hosts:
+        - thingsboard.hnatekmar.xyz
+      secretName: thingsboard-tls-secret
+  rules:
+    - host: thingsboard.hnatekmar.xyz
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: thingsboard
+                port:
+                  number: 8080
