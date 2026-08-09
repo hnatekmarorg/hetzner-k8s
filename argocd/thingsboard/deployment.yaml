@@ -17,6 +17,9 @@ spec:
         app.kubernetes.io/name: thingsboard
         app.kubernetes.io/component: tb-node
     spec:
+      # Host network exposes the transport ports directly on the node so remote
+      # devices can connect without a LoadBalancer (single-node cluster).
+      hostNetwork: true
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
