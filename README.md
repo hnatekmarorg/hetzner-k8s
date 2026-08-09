@@ -253,6 +253,5 @@ kubectl get app -n argocd
 ├── charts/              # Custom Helm charts
 ├── crossplane/          # Crossplane resources
 ├── docs/                # Documentation
-├── openspec/            # OpenSpec configuration
 └── scripts/             # Utility scripts
 ```

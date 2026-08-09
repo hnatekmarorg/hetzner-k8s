@@ -104,9 +104,6 @@ This repository manages Kubernetes infrastructure using:
 │   └── workflows/                   # Workflow documentation
 │       ├── adding-project-sso.md
 │       └── troubleshooting.md
-├── openspec/                        # OpenSpec configuration
-│   ├── changes/                     # OpenSpec change records
-│   └── config.yaml
 ├── init.yaml                        # Root ArgoCD application (legacy)
 └── pod.yaml                         # External Secrets test pod
 ```
