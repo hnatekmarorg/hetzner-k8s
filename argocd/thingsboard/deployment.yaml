@@ -36,8 +36,24 @@ spec:
               containerPort: 1883
             - name: mqtt-tls
               containerPort: 8883
+            # CoAP transport listens on the UDP range 5683-5688
             - name: coap
               containerPort: 5683
+              protocol: UDP
+            - name: coap-5684
+              containerPort: 5684
+              protocol: UDP
+            - name: coap-5685
+              containerPort: 5685
+              protocol: UDP
+            - name: coap-5686
+              containerPort: 5686
+              protocol: UDP
+            - name: coap-5687
+              containerPort: 5687
+              protocol: UDP
+            - name: coap-5688
+              containerPort: 5688
               protocol: UDP
           env:
             # Telemetry and event data retention
