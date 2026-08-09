@@ -13,6 +13,19 @@ spec:
     - name: http
       port: 8080
       targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: thingsboard-mqtt
+  namespace: thingsboard
+  labels:
+    app.kubernetes.io/name: thingsboard
+spec:
+  type: LoadBalancer
+  selector:
+    app.kubernetes.io/name: thingsboard
+  ports:
     - name: mqtt
       port: 1883
       targetPort: 1883
