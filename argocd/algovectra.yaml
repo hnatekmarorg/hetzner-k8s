@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: https://github.com/hnatekmarorg/algovectra.git
     targetRevision: main
-    path: /
+    path: .
   destination:
     server: https://kubernetes.default.svc
     namespace: default
