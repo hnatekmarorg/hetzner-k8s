@@ -1,0 +1,18 @@
+---
+# Adopt Keycloak's built-in admin realm role so group-to-role mappings can
+# reference it via roleIdsRefs. Orphaned on delete so the built-in role is
+# never removed from Keycloak.
+apiVersion: role.keycloak.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: admin
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  deletionPolicy: Orphan
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    name: admin
+    realmId: master
