@@ -20,7 +20,6 @@ spec:
       ref: values
     - repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
       targetRevision: main
-      path: crossplane/secrets
       ref: secrets
   destination:
     server: https://kubernetes.default.svc
