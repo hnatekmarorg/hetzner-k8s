@@ -11,6 +11,13 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
+  ignoreDifferences:
+    # kube-prometheus-stack CRDs carry huge schemas; SSA avoids the
+    # last-applied-configuration annotation that exceeds etcd limits
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jqPathExpressions:
+        - .metadata.annotations
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
@@ -90,3 +97,4 @@ spec:
         maxDuration: 3m
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
