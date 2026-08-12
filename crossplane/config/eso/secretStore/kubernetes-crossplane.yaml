@@ -9,6 +9,13 @@ spec:
   provider:
     kubernetes:
       remoteNamespace: crossplane-system
-      caBundle: ""
-      caBundle: ""
-      caBundle: ""
+      server:
+        caProvider:
+          type: ConfigMap
+          name: kube-root-ca.crt
+          key: ca.crt
+          namespace: kube-system
+      auth:
+        serviceAccount:
+          name: external-secrets
+          namespace: external-secrets
