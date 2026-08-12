@@ -1,0 +1,6 @@
+---
+# Monitoring namespace for Prometheus, Grafana, and Loki
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring

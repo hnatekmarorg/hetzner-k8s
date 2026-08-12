@@ -232,6 +232,7 @@ If secrets are not syncing:
 - [SSO Overview](docs/crossplane/sso-overview.md) - Cross-service SSO reference (OpenBao, ArgoCD, Keycloak)
 - [SSO Integration Guide](docs/crossplane/sso-integration.md)
 - [External Secrets Configuration](docs/crossplane/external-secrets.md)
+- [Monitoring Stack](docs/monitoring.md) - Prometheus, Grafana, and Loki setup
 
 ## Quick Start
 

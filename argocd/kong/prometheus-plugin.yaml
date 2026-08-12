@@ -1,0 +1,17 @@
+---
+# Enable Kong's built-in Prometheus plugin globally so the proxy /metrics
+# endpoint exposes traffic metrics (request counts, status codes, latency,
+# bandwidth) in addition to the default memory/connection metrics.
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: prometheus
+  annotations:
+    kubernetes.io/ingress.class: kong
+config:
+  per_consumer: false
+  status_code_metrics: true
+  latency_metrics: true
+  bandwidth_metrics: true
+  upstream_health_metrics: true
+plugin: prometheus

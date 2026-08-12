@@ -1,0 +1,92 @@
+---
+# Prometheus monitoring stack (Prometheus, Alertmanager, Grafana)
+# Grafana is exposed at https://monitoring-hetzner.hnatekmar.xyz with Keycloak SSO.
+# Admin access via OIDC groups claim: algovectra and hnatekmarorg-admin.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 88.3.0
+    helm:
+      releaseName: kube-prometheus-stack
+      valuesObject:
+        grafana:
+          enabled: true
+          ingress:
+            enabled: true
+            ingressClassName: kong
+            annotations:
+              cert-manager.io/cluster-issuer: letsencrypt-prod
+            hosts:
+              - monitoring-hetzner.hnatekmar.xyz
+            tls:
+              - hosts:
+                  - monitoring-hetzner.hnatekmar.xyz
+                secretName: grafana-tls
+          additionalDataSources:
+            - name: Loki
+              type: loki
+              uid: loki
+              url: http://loki.monitoring.svc.cluster.local:3100
+              access: proxy
+              isDefault: false
+          envValueFrom:
+            GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET:
+              secretKeyRef:
+                name: grafana-hnatekmar-xyz
+                key: client_secret
+          grafana.ini:
+            server:
+              root_url: https://monitoring-hetzner.hnatekmar.xyz
+            security:
+              disable_initial_admin_creation: true
+            auth:
+              disable_login_form: true
+            auth.generic_oauth:
+              enabled: true
+              name: SSO
+              allow_sign_up: true
+              client_id: grafana-hnatekmar-xyz
+              client_secret: $__env{GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET}
+              scopes: openid profile email microprofile-jwt
+              auth_url: https://sso.hnatekmar.xyz/realms/master/protocol/openid-connect/auth
+              token_url: https://sso.hnatekmar.xyz/realms/master/protocol/openid-connect/token
+              api_url: https://sso.hnatekmar.xyz/realms/master/protocol/openid-connect/userinfo
+              role_attribute_path: contains(groups[*], 'hnatekmarorg-admin') && 'Admin' || contains(groups[*], 'algovectra') && 'Admin'
+              role_attribute_strict: true
+        prometheus:
+          prometheusSpec:
+            retention: 7d
+            resources:
+              requests:
+                memory: 512Mi
+                cpu: 200m
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests:
+                memory: 64Mi
+                cpu: 100m
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,73 @@
+---
+# Keycloak OIDC Client for Grafana
+# This client enables SSO authentication for Grafana (monitoring stack)
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: grafana-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  writeConnectionSecretToRef:
+    name: grafana-hnatekmar-xyz
+    namespace: crossplane-system
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmId: master
+    standardFlowEnabled: true
+    fullScopeAllowed: true
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
+    clientId: grafana-hnatekmar-xyz
+    baseUrl: /
+    rootUrl: https://monitoring-hetzner.hnatekmar.xyz
+    validPostLogoutRedirectUris:
+      - https://monitoring-hetzner.hnatekmar.xyz/login/logout
+    validRedirectUris:
+      - https://monitoring-hetzner.hnatekmar.xyz/login/generic_oauth
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: grafana-hnatekmar-xyz-default-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: grafana-hnatekmar-xyz
+    defaultScopes:
+      - acr
+      - email
+      - profile
+      - roles
+      - web-origins
+      - microprofile-jwt
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: grafana-hnatekmar-xyz-optional-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: grafana-hnatekmar-xyz
+    optionalScopes:
+      - phone
+      - address

@@ -1,0 +1,52 @@
+---
+# Applies monitoring resources that depend on the kube-prometheus-stack CRDs
+# (ServiceMonitors, PodMonitors) and on the Keycloak/ESO wiring created by the
+# crossplane-config app. Syncs after kube-prometheus-stack (wave 1), loki
+# (wave 1), and crossplane-config (wave 4) so those resources are deterministic
+# on first install instead of failing until a retry.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-resources
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  ignoreDifferences:
+    # Ignore status/field churn from External Secrets syncs
+    - group: external-secrets.io
+      kind: ExternalSecret
+      jsonPointers:
+        - /status
+        - /spec/dataFrom
+        - /spec/data
+        - /spec/target
+    # Ignore checksum/annotation updates the Grafana dashboard sidecar writes
+    # to the provisioning ConfigMaps
+    - group: ""
+      kind: ConfigMap
+      jqPathExpressions:
+        - .metadata.annotations
+  source:
+    repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+    targetRevision: HEAD
+    path: monitoring
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

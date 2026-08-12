@@ -25,6 +25,7 @@ Keycloak Group → Keycloak Realm Role → OpenBao OIDC Role (boundGroups) → O
 | OpenBao | https://bao.hnatekmar.xyz | `bao-hnatekmar-xyz` | OIDC (authorization code) | OpenBao OIDC roles → policies |
 | ArgoCD | https://argocd.hnatekmar.xyz/argocd | `argocd-hnatekmar-xyz` | OIDC | ArgoCD RBAC `g, hnatekmarorg-admin, role:admin` |
 | ArgoCD Bootstrap | https://argocd-bootstrap.hnatekmar.xyz | `argocd-bootstrap-hnatekmar-xyz` | OIDC | ArgoCD RBAC `g, hnatekmarorg-admin, role:admin` |
+| Grafana | https://monitoring-hetzner.hnatekmar.xyz | `grafana-hnatekmar-xyz` | OIDC (authorization code) | Grafana `role_attribute_path`: `algovectra` + `hnatekmarorg-admin` → Admin |
 
 ## Identity Providers
 
@@ -47,6 +48,7 @@ Both providers sync GitHub username and email into the Keycloak user profile.
 | `bao-hnatekmar-xyz` | OpenBao | CONFIDENTIAL | `https://bao.hnatekmar.xyz/ui/vault/auth/oidc/oidc/callback`, `http://localhost:8250/oidc/callback` |
 | `argocd-hnatekmar-xyz` | ArgoCD | CONFIDENTIAL | `https://argocd.hnatekmar.xyz/argocd/auth/callback`, `http://localhost:8080/argocd/auth/callback` |
 | `argocd-bootstrap-hnatekmar-xyz` | ArgoCD Bootstrap | CONFIDENTIAL | `https://argocd-bootstrap.hnatekmar.xyz/auth/callback`, `http://localhost:8080/auth/callback` |
+| `grafana-hnatekmar-xyz` | Grafana | CONFIDENTIAL | `https://monitoring-hetzner.hnatekmar.xyz/login/generic_oauth` |
 
 - Manifests: `crossplane/config/keycloak/clients/*.yaml`
 - Client secrets are written to connection secrets and synced into the service namespace via ExternalSecrets (see `argocd/argocd-external-secret.yaml`, `argocd/argocd-bootstrap-external-secret.yaml`).
@@ -76,6 +78,17 @@ Both ArgoCD instances map OIDC group claims to the built-in `role:admin`:
 | ArgoCD Bootstrap | `hnatekmarorg-admin` → `role:admin` | `argocd/argocd-bootstrap.yaml` |
 
 Only the `hnatekmarorg-admin` group has access to ArgoCD (admin level). The `hnatekmarorg-admin` group is also mapped to Keycloak's built-in `admin` realm role, granting admin console access (`crossplane/config/keycloak/roles/hnatekmarorg-admin-keycloak-admin-mapping.yaml`). The legacy `argocd-admins` group has been removed.
+
+## Grafana Access
+
+Grafana authenticates via the `grafana-hnatekmar-xyz` OIDC client (generic OAuth) and maps the token's `groups` claim (realm roles emitted by the microprofile-jwt scope) to an org role using `role_attribute_path` (`argocd/monitoring/kube-prometheus-stack.yaml`):
+
+| Keycloak Realm Role | Grafana Org Role |
+|---------------------|------------------|
+| `algovectra` | Admin |
+| `hnatekmarorg-admin` | Admin |
+
+Only members of those two roles can sign in (strict role mapping); all other logins are denied. Local login form and initial admin creation are disabled, so SSO is the only way in. The Grafana client secret is propagated from the Crossplane connection secret `crossplane-system/grafana-hnatekmar-xyz` to the `monitoring` namespace via a `kubernetes` ClusterSecretStore (`crossplane/config/eso/secretStore/kubernetes-crossplane.yaml`) and an ExternalSecret (`monitoring/external-secret.yaml`).
 
 ## Known Gaps
 

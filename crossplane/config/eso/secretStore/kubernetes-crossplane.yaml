@@ -1,0 +1,11 @@
+# ClusterSecretStore that reads Kubernetes secrets from the crossplane-system
+# namespace. Used to sync Crossplane connection secrets (e.g. Keycloak client
+# secrets) into application namespaces.
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: kubernetes-crossplane
+spec:
+  provider:
+    kubernetes:
+      remoteNamespace: crossplane-system
