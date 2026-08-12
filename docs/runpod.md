@@ -26,8 +26,14 @@ Kubernetes node's networking):
 
 Both are gated by Kong `key-auth` (`apikey` header). The token lives in OpenBao and is
 synced into the `monitoring/monitoring-pusher-key-auth` Secret by external-secrets; the
-Kong consumer references that Secret (KIC 3.x credential model), so **no key is committed
-to git**.
+Kong consumer references that Secret (KIC 3.x credential model, keyed by the
+`konghq.com/credential: key-auth` **label**), so **no key is committed to git**.
+
+> **DNS (required before the endpoints work):** add A records for
+> `loki.hnatekmar.xyz` and `prometheus-push.hnatekmar.xyz` pointing at
+> `88.198.65.246` (the Kong node IP), like the other `*.hnatekmar.xyz` services.
+> The wildcard currently resolves new subdomains to the wrong IP, which blocks
+> Let's Encrypt HTTP-01 validation (and thus the TLS secrets Kong needs to route).
 
 > Why not Tailscale? A host-level Tailscale that manipulates routes/tables/TUN on the
 > Kubernetes node risks interfering with the k3s CNI (flannel) and kube-proxy. Keep the

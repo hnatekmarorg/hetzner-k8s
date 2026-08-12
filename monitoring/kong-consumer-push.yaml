@@ -10,10 +10,9 @@ metadata:
   namespace: monitoring
   annotations:
     kubernetes.io/ingress.class: kong
-spec:
-  username: monitoring-pusher
-  credentials:
-    - monitoring-pusher-key-auth
+username: monitoring-pusher
+credentials:
+  - monitoring-pusher-key-auth
 ---
 # Syncs the push endpoint API key from OpenBao (clusters/monitoring/push-token)
 # into the key-auth credential Secret for the monitoring-pusher consumer.
@@ -36,7 +35,7 @@ spec:
     template:
       engineVersion: v2
       metadata:
-        annotations:
+        labels:
           konghq.com/credential: key-auth
       data:
         key: "{{ .token }}"
