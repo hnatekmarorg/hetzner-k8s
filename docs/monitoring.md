@@ -13,6 +13,7 @@ wave 5) so the Prometheus CRDs and the Keycloak client secret already exist.
 |-----------|-----------|---------|-------|
 | Prometheus + Alertmanager + Grafana | `kube-prometheus-stack` | 88.3.0 | Also installs kube-state-metrics, node-exporter, and the default Kubernetes dashboards |
 | Loki | `loki` | 18.7.6 | Monolithic (single-binary) mode, filesystem storage |
+| Promtail | `promtail` | 6.17.1 | DaemonSet shipping container logs to Loki |
 
 ## Access
 
@@ -32,7 +33,9 @@ wave 5) so the Prometheus CRDs and the Keycloak client secret already exist.
 
 - **Prometheus**: default, wired automatically by kube-prometheus-stack.
 - **Loki**: configured via `grafana.additionalDataSources`
-  (`http://loki.monitoring.svc.cluster.local:3100`).
+  (`http://loki.monitoring.svc.cluster.local:3100`). Auth is disabled
+  (`auth_enabled: false`), so no `X-Scope-OrgID` header is needed. Container
+  logs are shipped to it by the `promtail` DaemonSet.
 
 ## Dashboards
 

@@ -32,11 +32,16 @@ spec:
           enabled: false
         memcached:
           enabled: false
+        chunksCache:
+          enabled: false
         resultsCache:
           enabled: false
         test:
           enabled: false
         loki:
+          # Single-tenant setup: no X-Scope-OrgID header required from
+          # Grafana or the log shipping agent
+          auth_enabled: false
           commonConfig:
             replication_factor: 1
           storage:

@@ -1,0 +1,40 @@
+---
+# Promtail DaemonSet: ships container logs from every node to Loki.
+# Consumed by the loki-logs dashboard in Grafana at
+# monitoring-hetzner.hnatekmar.xyz. The chart's default config already
+# provides a kubernetes-pods scrape job and CRI pipeline stages; only the
+# Loki push URL is overridden.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: promtail
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: promtail
+    targetRevision: 6.17.1
+    helm:
+      releaseName: promtail
+      valuesObject:
+        config:
+          clients:
+            - url: http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+    syncOptions:
+      - CreateNamespace=true
