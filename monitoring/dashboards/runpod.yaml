@@ -1,0 +1,119 @@
+---
+# Grafana RunPod dashboard: GPU pod status/cost, account balance, GPU pricing.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-runpod
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  runpod.json: |
+    {
+      "title": "RunPod",
+      "uid": "runpod-overview",
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "tags": ["runpod", "gpu"],
+      "refresh": "1m",
+      "time": { "from": "now-3h", "to": "now" },
+      "panels": [
+        {
+          "type": "stat",
+          "title": "Account balance",
+          "gridPos": { "h": 4, "w": 8, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(runpod_account_balance_usd{kind=~\"committed|uncommitted\"})",
+              "legendFormat": "committed + uncommitted"
+            }
+          ],
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "currencyUSD",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "yellow", "value": 10 },
+                  { "color": "green", "value": 50 }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "type": "piechart",
+          "title": "Balance breakdown",
+          "gridPos": { "h": 4, "w": 8, "x": 8, "y": 0 },
+          "targets": [
+            {
+              "expr": "runpod_account_balance_usd{kind=\"committed\"}",
+              "legendFormat": "committed"
+            },
+            {
+              "expr": "runpod_account_balance_usd{kind=\"uncommitted\"}",
+              "legendFormat": "uncommitted"
+            },
+            {
+              "expr": "runpod_account_balance_usd{kind=\"lifetime\"}",
+              "legendFormat": "lifetime"
+            }
+          ],
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "options": { "reduceOptions": { "calcs": ["lastNotNull"] } }
+        },
+        {
+          "type": "table",
+          "title": "GPU pods",
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+          "targets": [
+            {
+              "expr": "max by (id, name, desired_status, runtime_status) (runpod_pod_status == 1)",
+              "format": "table",
+              "instant": true
+            }
+          ],
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "transformations": [
+            { "id": "organize", "options": { "renameByName": { "desired_status": "Desired", "runtime_status": "Runtime", "id": "ID", "name": "Name" } } }
+          ]
+        },
+        {
+          "type": "table",
+          "title": "Pod hourly cost",
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 4 },
+          "targets": [
+            { "expr": "runpod_pod_cost_per_hour_usd", "format": "table", "instant": true }
+          ],
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "currencyUSD/hour",
+              "decimals": 3
+            }
+          }
+        },
+        {
+          "type": "bargauge",
+          "title": "GPU lowest price (community)",
+          "gridPos": { "h": 8, "w": 12, "x": 8, "y": 8 },
+          "targets": [
+            { "expr": "topk(10, runpod_gpu_lowest_price_usd_hour{cloud=\"community\"})", "legendFormat": "{{name}}" }
+          ],
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD/hour", "decimals": 3 } }
+        },
+        {
+          "type": "bargauge",
+          "title": "GPU lowest price (secure)",
+          "gridPos": { "h": 8, "w": 12, "x": 8, "y": 16 },
+          "targets": [
+            { "expr": "topk(10, runpod_gpu_lowest_price_usd_hour{cloud=\"secure\"})", "legendFormat": "{{name}}" }
+          ],
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "fieldConfig": { "defaults": { "unit": "currencyUSD/hour", "decimals": 3 } }
+        }
+      ]
+    }

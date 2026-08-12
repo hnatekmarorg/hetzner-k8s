@@ -72,6 +72,10 @@ spec:
         prometheus:
           prometheusSpec:
             retention: 7d
+            # Accept Remote Write from external Collectors (e.g. Grafana Alloy
+            # running on RunPod GPU instances) so the homelab Prometheus can
+            # aggregate metrics from non-cluster machines.
+            enableRemoteWriteReceiver: true
             resources:
               requests:
                 memory: 512Mi

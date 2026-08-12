@@ -14,6 +14,7 @@ wave 5) so the Prometheus CRDs and the Keycloak client secret already exist.
 | Prometheus + Alertmanager + Grafana | `kube-prometheus-stack` | 88.3.0 | Also installs kube-state-metrics, node-exporter, and the default Kubernetes dashboards |
 | Loki | `loki` | 18.7.6 | Monolithic (single-binary) mode, filesystem storage |
 | Promtail | `promtail` | 6.17.1 | DaemonSet shipping container logs to Loki |
+| runpod-exporter | raw manifest | — | Pulls RunPod account/pods/GPU pricing (see `docs/runpod.md`) |
 
 ## Access
 
