@@ -1,0 +1,3 @@
+[submodule "related_repos/algovectra"]
+	path = related_repos/algovectra
+	url = https://github.com/hnatekmarorg/algovectra.git
