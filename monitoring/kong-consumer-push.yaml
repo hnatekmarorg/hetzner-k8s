@@ -1,0 +1,47 @@
+---
+# Kong consumer + credential for the machine push endpoints. In KIC 3.x the
+# credential is a plain Kubernetes Secret referenced by the consumer; the
+# actual token is synced from Vault by the ExternalSecret below, so no key
+# is committed to git.
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: monitoring-pusher
+  namespace: monitoring
+  annotations:
+    kubernetes.io/ingress.class: kong
+spec:
+  username: monitoring-pusher
+  credentials:
+    - monitoring-pusher-key-auth
+---
+# Syncs the push endpoint API key from OpenBao (clusters/monitoring/push-token)
+# into the key-auth credential Secret for the monitoring-pusher consumer.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: monitoring-pusher-key-auth
+  namespace: monitoring
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: local
+    kind: ClusterSecretStore
+  target:
+    name: monitoring-pusher-key-auth
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      engineVersion: v2
+      metadata:
+        annotations:
+          konghq.com/credential: key-auth
+      data:
+        key: "{{ .token }}"
+  data:
+    - secretKey: token
+      remoteRef:
+        key: /monitoring/push-token
+        property: token

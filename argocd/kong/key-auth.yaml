@@ -1,0 +1,16 @@
+---
+# key-auth plugin for machine-to-machine push endpoints (Loki push,
+# Prometheus remote-write) so external Collectors authenticate with an
+# API key instead of exposing auth-less ingestion. Attached to ingress(es)
+# via the konghq.com/plugins annotation.
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: key-auth
+  annotations:
+    kubernetes.io/ingress.class: kong
+plugin: key-auth
+config:
+  key_names:
+    - apikey
+  hide_credentials: true
