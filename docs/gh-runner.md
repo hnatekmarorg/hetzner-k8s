@@ -67,6 +67,25 @@ A PAT with `admin:org` scope on `Algovectra` (to call the registration-token
 endpoint). Create a throwaway one at
 https://github.com/settings/tokens — delete after registering.
 
+### Host sysctl (required — inotify)
+
+The .NET runner opens many `inotify` watchers and will crash with
+`fsnotify watcher: too many open files` on the kernel default
+`fs.inotify.max_user_instances=128`. This is a **host-level** limit (inotify
+instances are global, not namespaced — a pod `securityContext` cannot raise it),
+so set it on the Hetzner node:
+
+```bash
+# persist across reboots
+echo 'fs.inotify.max_user_instances=1024' | sudo tee /etc/sysctl.d/99-inotify.conf
+sudo sysctl -p /etc/sysctl.d/99-inotify.conf
+# verify
+sysctl fs.inotify.max_user_instances   # -> 1024
+```
+
+(`max_user_watches` is already ~256k and fine; only `max_user_instances` is the
+constraint.) Applies to all runner pods on the node.
+
 ### 1. Let ArgoCD create the namespace + PVC + pod
 
 Wait for the `gh-runner` Deployment to exist (it will `CrashLoopBackOff` until
