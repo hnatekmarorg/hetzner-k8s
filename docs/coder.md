@@ -119,7 +119,10 @@ Sign in at https://coder-hetzner.hnatekmar.xyz → "Sign in with SSO" → Keyclo
 
 ## Adding a workspace
 
-Coder provisions workspaces from templates (Terraform). For a basic Kubernetes
-workspace, create a template referencing a `kubernetes` provider pod in the
-`coder` namespace (the chart's service account has the needed RBAC). See the
-Coder docs: https://coder.com/docs/workspaces
+Coder provisions workspaces from Terraform templates. A starter Kubernetes
+template that runs on **this same cluster** (no extra RBAC — the Coder SA
+already has pods/PVC/deployment perms in the `coder` namespace) is in
+`coder-templates/kubernetes/`. See `coder-templates/README.md` for the one-time
+`coder templates push` registration and workspace creation. (Coder v2 OSS stores
+templates in its Postgres; it does not git-sync them, so this repo is the source
+of truth you push from.)
