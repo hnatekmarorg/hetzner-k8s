@@ -1,0 +1,74 @@
+---
+# Keycloak OIDC Client for Coder
+# This client enables SSO authentication for the self-hosted Coder instance.
+# Coder's OIDC redirect URI: https://coder-hetzner.hnatekmar.xyz/api/v2/users/oidc/callback
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: coder-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  writeConnectionSecretToRef:
+    name: coder-hnatekmar-xyz
+    namespace: crossplane-system
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmId: master
+    standardFlowEnabled: true
+    fullScopeAllowed: true
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
+    clientId: coder-hnatekmar-xyz
+    baseUrl: /
+    rootUrl: https://coder-hetzner.hnatekmar.xyz
+    validPostLogoutRedirectUris:
+      - https://coder-hetzner.hnatekmar.xyz
+    validRedirectUris:
+      - https://coder-hetzner.hnatekmar.xyz/api/v2/users/oidc/callback
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: coder-hnatekmar-xyz-default-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: coder-hnatekmar-xyz
+    defaultScopes:
+      - acr
+      - email
+      - profile
+      - roles
+      - web-origins
+      - microprofile-jwt
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: coder-hnatekmar-xyz-optional-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: coder-hnatekmar-xyz
+    optionalScopes:
+      - phone
+      - address
