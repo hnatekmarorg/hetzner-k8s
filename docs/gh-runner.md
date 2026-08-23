@@ -31,14 +31,28 @@ Picked up automatically by the `init` ArgoCD Application (recurses `argocd/`).
 - **No host `docker.sock`, no host paths, not privileged, no nested runtime.**
   The runner literally cannot spawn containers — enforces the "no nested
   containers" requirement at the pod level rather than trusting config.
-- **Non-root**: `runAsUser: 1000`, `runAsNonRoot`, `allowPrivilegeEscalation:
-  false`, all capabilities dropped, `readOnlyRootFilesystem`.
+- **Non-root**: `runAsUser: 1001` (the image's `runner` user), `runAsNonRoot`,
+  `allowPrivilegeEscalation: false`, all capabilities dropped,
+  `readOnlyRootFilesystem` (with an `emptyDir` at `/tmp` for transient files).
 - **Dedicated SA, zero RBAC, `automountServiceAccountToken: false`** — a runner
   needs no Kubernetes API access; it only long-polls GitHub. This pod cannot
   touch the host DIND builder, the node, or other pods beyond normal networking.
 - **Isolation from DIND**: the host DIND builder runs under a separate Linux
   account; this pod is a separate k8s workload with no shared socket or path.
   A compromised runner cannot reach the builder or the host.
+
+### Image layout (why the init container exists)
+
+The `ghcr.io/actions/actions-runner` image ships `run.sh`, `config.sh`, `bin/`,
+and `externals/` in `/home/runner` (WORKDIR, user `runner` = UID/GID 1001, no
+ENTRYPOINT). The registration credentials (`.runner`, `.credentials`) and job
+workspaces (`_work`, `_diag`) are written to that same directory. So the PVC
+must be mounted at `/home/runner` to persist registration across pod regens —
+but an empty PVC there would shadow the image's binaries (the original
+`stat ./run.sh: no such file or directory` crash). The `seed-home` init
+container fixes this: on every boot it `cp -a --no-clobber` the image's
+`/home/runner` into the PVC, seeding the binaries on first boot while
+preserving an existing `.runner`/`.credentials` on subsequent boots.
 
 ## One-time registration
 
