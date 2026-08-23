@@ -1,0 +1,94 @@
+# One-shot Job to register the GitHub Actions runner into the gh-runner PVC.
+#
+# NOT managed by ArgoCD (lives outside argocd/). Run manually, once, per the
+# runbook in docs/gh-runner.md. Why a Job instead of `kubectl exec`:
+# the gh-runner Deployment pod exits in ~1s on "Not configured" and CrashLoop-
+# BackOff's, so there is almost no window to exec config.sh into it. Patching
+# the Deployment command to `sleep infinity` is reverted by ArgoCD selfHeal.
+# This Job mounts the SAME PVC, runs config.sh --unattended, writes .runner /
+# .credentials onto the volume, then completes — and the Deployment pod picks
+# up the registered PVC on its next restart.
+#
+# Usage (fill REGISTRATION_TOKEN, then):
+#   kubectl -n runner apply -f argocd/gh-runner/register-job.yaml
+#   kubectl -n runner logs job/gh-runner-register -f
+#   kubectl -n runner delete pod -l app.kubernetes.io/name=gh-runner   # restart the runner on the now-registered PVC
+#   kubectl -n runner delete job gh-runner-register
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gh-runner-register
+  namespace: runner
+spec:
+  backoffLimit: 0          # don't retry a used/expired token
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      securityContext:
+        runAsUser: 1001
+        runAsNonRoot: true
+        fsGroup: 1001
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        # Same seeding as the Deployment: the PVC may be empty (no binaries)
+        # or already seeded. cp -rn seeds without clobbering existing state.
+        - name: seed-home
+          image: ghcr.io/actions/actions-runner:latest
+          imagePullPolicy: IfNotPresent
+          workingDir: /home/runner
+          command: ["/bin/sh", "-c", "cp -rn /home/runner/. /mnt/runner-home/ 2>/dev/null; true"]
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: runner-home
+              mountPath: /mnt/runner-home
+      containers:
+        - name: register
+          image: ghcr.io/actions/actions-runner:latest
+          imagePullPolicy: IfNotPresent
+          workingDir: /home/runner
+          command: ["/home/runner/config.sh"]
+          args:
+            - --url
+            - https://github.com/Algovectra
+            - --token
+            - $(REGISTRATION_TOKEN)
+            - --labels
+            - gha-runner-scale-set-algovectra
+            - --runnergroup
+            - default
+            - --unattended
+            - --replace
+          env:
+            - name: REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gh-runner-registration
+                  key: token
+            - name: RUNNER_ALLOW_RUNASROOT
+              value: "0"
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: runner-home
+              mountPath: /home/runner
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: runner-home
+          persistentVolumeClaim:
+            claimName: gh-runner
+        - name: tmp
+          emptyDir: {}
