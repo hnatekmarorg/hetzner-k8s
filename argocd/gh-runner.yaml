@@ -94,14 +94,16 @@ spec:
       # Seed the PVC from the image's /home/runner on first boot. The image
       # ships run.sh/config.sh/bin/externals there; mounting an empty PVC over
       # /home/runner would shadow them (the original "no such file" crash).
-      # cp -a --no-clobber preserves a previously-registered .runner/.credentials
-      # across restarts, so re-registration is never needed.
+      # cp -rn copies recursively without clobbering existing files, so a
+      # previously-registered .runner/.credentials is preserved across restarts
+      # and re-registration is never needed. We avoid -a (preserve times/owner)
+      # because utime on the local-path mount EPERMs for non-root.
       initContainers:
         - name: seed-home
           image: ghcr.io/actions/actions-runner:latest
           imagePullPolicy: IfNotPresent
           workingDir: /home/runner
-          command: ["/bin/sh", "-c", "cp -a --no-clobber /home/runner/. /mnt/runner-home/"]
+          command: ["/bin/sh", "-c", "cp -rn /home/runner/. /mnt/runner-home/ 2>/dev/null; true"]
           securityContext:
             runAsUser: 1001
             runAsNonRoot: true
