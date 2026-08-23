@@ -1,0 +1,29 @@
+---
+# Runner namespace for the Algovectra self-hosted GitHub Actions runner.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: runner
+---
+# Persistent registration state for the GitHub Actions runner.
+#
+# The actions/runner agent stores its registration credentials (.runner),
+# the runner's long-lived auth token, and ephemeral job working dirs under
+# /actions-runner/_work. We persist /actions-runner on this PVC so the runner
+# stays registered across pod restarts and ArgoCD resyncs — i.e. the one-time
+# registration (config.sh --unattended) is never repeated unless the runner is
+# removed from GitHub or this PVC is wiped.
+#
+# local-path is the cluster's default StorageClass (same as keycloak/openbao).
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gh-runner
+  namespace: runner
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 5Gi

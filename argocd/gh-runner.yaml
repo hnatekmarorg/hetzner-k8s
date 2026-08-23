@@ -1,0 +1,96 @@
+---
+# Self-hosted GitHub Actions runner for the Algovectra org.
+#
+# Plain Deployment (replicas=1), no operator/CRDs — deliberately NOT actions-
+# runner-controller. Registered org-level against Algovectra with the label
+# `gha-runner-scale-set-algovectra` so workflows that currently target the
+# (buggy) ARC runner group route here unchanged via:
+#   runs-on: [self-hosted, gha-runner-scale-set-algovectra]
+#
+# Security / isolation (by construction):
+#   * No host docker.sock, no host paths, not privileged → the runner CANNOT
+#     spawn nested containers. Container/docker-build jobs must stay on the
+#     host DIND builder; this pod handles shell/lint/test/deploy CI only.
+#   * Non-root (runAsUser 1000, runAsNonRoot, no privilege escalation).
+#   * readOnlyRootFilesystem; all state on the gh-runner PVC.
+#   * Dedicated ServiceAccount with ZERO RBAC (a runner needs none — it just
+#     long-polls GitHub). This pod cannot touch the DIND builder, the host,
+#     or other pods beyond normal network.
+#
+# Registration: see docs/gh-runner.md. One-time `config.sh --unattended` writes
+# credentials to the PVC; the running container just execs run.sh. No secret is
+# committed — the registration token is short-lived/single-use and fetched ad-hoc.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gh-runner
+  namespace: runner
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gh-runner
+  namespace: runner
+  labels:
+    app.kubernetes.io/name: gh-runner
+    app.kubernetes.io/part-of: runner
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate          # single replica + a RWX-less PVC; never roll two
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gh-runner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: gh-runner
+        app.kubernetes.io/part-of: runner
+    spec:
+      serviceAccountName: gh-runner
+      automountServiceAccountToken: false   # no API creds needed
+      securityContext:
+        runAsUser: 1000
+        runAsNonRoot: true
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: runner
+          image: ghcr.io/actions/actions-runner:latest
+          imagePullPolicy: Always
+          workingDir: /actions-runner
+          # Start the agent. Registration is done once into the PVC (see docs);
+          # if not yet registered, the container exits and the runbook registers.
+          command: ["./run.sh"]
+          env:
+            - name: RUNNER_ALLOW_RUNASROOT
+              value: "0"          # assert non-root; image default, explicit for clarity
+          securityContext:
+            runAsUser: 1000
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          volumeMounts:
+            - name: runner-home
+              mountPath: /actions-runner
+      volumes:
+        - name: runner-home
+          persistentVolumeClaim:
+            claimName: gh-runner
+      tolerations:
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
