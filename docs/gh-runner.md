@@ -112,38 +112,74 @@ TOKEN=$(curl -s -X POST \
 echo "$TOKEN"           # ~1h lifetime, single use
 ```
 
-### 3. Register into the PVC (one-shot Job)
+### 3. Register into the PVC
 
-`runner/register-job.yaml` is a one-shot `Job` (NOT ArgoCD-managed — it lives
-outside `argocd/`, so ArgoCD never applies or prunes it). It mounts the same
-`gh-runner` PVC, seeds the binaries (same `cp -rn` as the Deployment), runs
-`config.sh --unattended`, and writes `.runner`/`.credentials` onto the volume.
+Register by running a **throwaway pod** that mounts the same `gh-runner` PVC and
+runs `config.sh`. (You can't `kubectl exec` into the runner pod — it exits in
+~1s on "Not configured" and `CrashLoopBackOff`s. A separate pod avoids the race
+and writes `.runner`/`.credentials` straight onto the volume.)
 
-Put the token in a secret, apply the Job, watch it, then restart the runner:
+> **Single-node only.** This works because the `gh-runner` PVC is `ReadWriteOnce`
+> and both pods land on the one node. On a multi-node cluster use the portable
+> **Job** variant at the end of this section instead (the `RWO` PVC could bind a
+> throwaway pod to a different node than the runner, mounting nothing useful).
+
+#### 3a. Quick: `kubectl run` (single-node)
 
 ```bash
-# 3a. Stash the token (short-lived; delete after)
+kubectl -n runner run gh-runner-register --rm -i --restart=Never \
+  --image=ghcr.io/actions/actions-runner:latest \
+  --overrides='{
+    "spec": {
+      "securityContext": {"runAsUser":1001,"runAsNonRoot":true,"fsGroup":1001},
+      "containers": [{
+        "name":"gh-runner-register",
+        "workingDir":"/home/runner",
+        "command":["/home/runner/config.sh","--url","https://github.com/Algovectra","--token","'"$TOKEN"'","--labels","gha-runner-scale-set-algovectra","--runnergroup","default","--unattended","--replace"]
+      }],
+      "volumes": [{"name":"home","persistentVolumeClaim":{"claimName":"gh-runner"}}]
+    }
+  }'
+#   → logs "√ Runner successfully added", then --rm deletes the pod
+```
+
+The Deployment's `seed-home` init has already copied the image's binaries onto
+the PVC, so the throwaway pod finds `config.sh` at `/home/runner` without its
+own init container. `'"$TOKEN"'` splices the shell variable into the JSON.
+
+#### 3b. Portable: one-shot Job (multi-node / reproducible)
+
+`runner/register-job.yaml` is a `Job` (NOT ArgoCD-managed — lives outside
+`argocd/`, so it is never auto-applied/pruned). It mounts the same PVC, seeds
+the binaries (`cp -rn`), runs `config.sh --unattended`, and writes credentials
+to the volume.
+
+```bash
+# stash the token (short-lived; delete after)
 kubectl -n runner create secret generic gh-runner-registration \
   --from-literal=token="$TOKEN"
 
-# 3b. Run the registration Job
 kubectl -n runner apply -f runner/register-job.yaml
 kubectl -n runner logs job/gh-runner-register -f
-#   → ends with "√ Runner successfully added" and the Job goes Completed
+#   → "√ Runner successfully added", Job goes Completed
 
-# 3c. Restart the runner so it picks up the now-registered PVC
-kubectl -n runner delete pod -l app.kubernetes.io/name=gh-runner
-
-# 3d. Clean up the one-shot resources
 kubectl -n runner delete job gh-runner-register
 kubectl -n runner delete secret gh-runner-registration
+```
+
+`backoffLimit: 0` means it won't retry a used/expired token — if it fails,
+delete it, fetch a fresh token, and re-apply.
+
+#### Either way, then restart the runner
+
+```bash
+kubectl -n runner delete pod -l app.kubernetes.io/name=gh-runner
+#   → Deployment recreates it on the now-registered PVC
 ```
 
 - `--labels gha-runner-scale-set-algovectra` is what workflows target with
   `runs-on:` (`self-hosted` and the OS are auto-added; don't list them).
 - `--replace` makes it safe to re-run if a stale half-registration exists.
-- The `backoffLimit: 0` on the Job means it won't retry a used/expired token —
-  if it fails, delete it, fetch a fresh token, and re-apply.
 
 ### 4. Verify
 
@@ -163,7 +199,7 @@ Trigger any workflow with `runs-on: [self-hosted, gha-runner-scale-set-algovectr
   credentials persist. `Recreate` strategy means a restart never runs two pods.
 - **Move/recreate the runner**: delete it in the GitHub UI (Settings → Actions →
   Runners), wipe the PVC (`kubectl -n runner delete pvc gh-runner`), let ArgoCD
-  recreate it, then re-run the registration Job (step 3) with a fresh token.
+  recreate it, then re-register (step 3) with a fresh token.
 - **Upgrade the runner image**: the image tag is `latest` (upstream-published).
   Bump by deleting the pod; the new image reuses the same registration. To pin,
   set an explicit tag in `argocd/gh-runner.yaml`.
