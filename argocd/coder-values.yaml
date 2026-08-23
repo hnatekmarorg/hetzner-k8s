@@ -55,11 +55,6 @@ coder:
     - secretRef:
         name: coder-db-creds
 
-  # ── Image ─────────────────────────────────────────────────────────────────
-  image:
-    repo: docker.io/coder/coder
-    tag: ""  # defaults to v<chart appVersion> = v2.36.1
-
   # ── Ingress (Kong) ────────────────────────────────────────────────────────
   ingress:
     enable: true
