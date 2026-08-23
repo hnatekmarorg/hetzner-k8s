@@ -83,8 +83,10 @@ Add an A record for `coder-hetzner.hnatekmar.xyz` → Kong node IP (same as the 
 
 - Issuer: `https://sso.hnatekmar.xyz/realms/master`
 - Redirect URI (set on the Keycloak client): `https://coder-hetzner.hnatekmar.xyz/api/v2/users/oidc/callback`
-- Scopes: `openid,profile,email,offline_access` (+ `microprofile-jwt` via the
-  client default scopes, which provides the `groups` claim)
+- Scopes: `openid,profile,email,microprofile-jwt` (the last carries the
+  `groups` claim for group/role sync). Do **not** add `offline_access` — it is
+  not a requestable scope on these Keycloak clients and Keycloak rejects the
+  whole auth request with "Invalid scopes".
 - Group/role sync: `CODER_OIDC_GROUP_FIELD=groups`, `CODER_OIDC_USER_ROLE_FIELD=groups`
 
 ## Metrics
