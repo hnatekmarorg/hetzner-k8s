@@ -1,6 +1,6 @@
 # Coder v2 Helm values
 # Self-hosted Coder (https://github.com/coder/coder) for developer + agent
-# workspaces. Exposed at https://coder.hnatekmar.xyz behind the existing Kong
+# workspaces. Exposed at https://coder-hetzner.hnatekmar.xyz behind the existing Kong
 # ingress with Keycloak OIDC SSO. Metrics scraped by the homelab Prometheus
 # (see monitoring/scrapers/coder.yaml).
 #
@@ -10,15 +10,15 @@ coder:
   env:
     # ── Access URLs ────────────────────────────────────────────────────────
     - name: CODER_ACCESS_URL
-      value: "https://coder.hnatekmar.xyz"
+      value: "https://coder-hetzner.hnatekmar.xyz"
     - name: CODER_WILDCARD_ACCESS_URL
-      value: "*.coder.hnatekmar.xyz"
+      value: "*.coder-hetzner.hnatekmar.xyz"
     - name: CODER_WILDCARD_TLS_DISABLE
       value: "true"  # TLS terminated at Kong; workspace-app traffic is plain HTTP upstream
 
     # ── OIDC (Keycloak) ────────────────────────────────────────────────────
     # OIDC redirect URI configured on the Keycloak client:
-    #   https://coder.hnatekmar.xyz/api/v2/users/oidc/callback
+    #   https://coder-hetzner.hnatekmar.xyz/api/v2/users/oidc/callback
     - name: CODER_OIDC_ISSUER_URL
       value: "https://sso.hnatekmar.xyz/realms/master"
     - name: CODER_OIDC_CLIENT_ID
@@ -45,14 +45,12 @@ coder:
       value: "true"
 
   # ── PostgreSQL ────────────────────────────────────────────────────────────
-  # coder-postgresql is deployed by argocd/coder-postgresql.yaml. The full
-  # connection DSN is synced from OpenBao (clusters/coder, key `dsn`) into the
-  # coder-db-creds Secret and injected here via envFrom (the secret key is the
-  # env var name: CODER_PG_CONNECTION_URL). The same Secret also holds
-  # `postgres-password` for the Bitnami chart's existingSecret. Store in OpenBao:
-  #   bao kv put clusters/coder \
-  #     password=<postgres-pass> \
-  #     dsn='postgres://coder:<postgres-pass>@coder-postgresql:5432/coder?sslmode=disable'
+  # coder-postgresql (argocd/coder-postgresql.yaml) auto-generates its password
+  # into the coder/coder-postgresql Secret. The coder-db ExternalSecret
+  # (argocd/coder/resources.yaml) reads that secret via the kubernetes-coder
+  # ClusterSecretStore and templates it into CODER_PG_CONNECTION_URL here via
+  # envFrom (secret key = env var name). No password is stored in OpenBao.
+  # See docs/coder.md for the full first-sync ordering.
   envFrom:
     - secretRef:
         name: coder-db-creds
@@ -66,12 +64,12 @@ coder:
   ingress:
     enable: true
     className: kong
-    host: coder.hnatekmar.xyz
-    # Workspace apps are served on *.coder.hnatekmar.xyz. TLS for the wildcard
+    host: coder-hetzner.hnatekmar.xyz
+    # Workspace apps are served on *.coder-hetzner.hnatekmar.xyz. TLS for the wildcard
     # is NOT provisioned here (the cluster only has single-host HTTP-01 via
     # letsencrypt-prod); Kong terminates TLS for the apex host. See docs/coder.md
     # for wildcard-TLS notes if workspace-app HTTPS is later required.
-    wildcardHost: "*.coder.hnatekmar.xyz"
+    wildcardHost: "*.coder-hetzner.hnatekmar.xyz"
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
     tls:

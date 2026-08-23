@@ -1,7 +1,7 @@
 ---
 # Keycloak OIDC Client for Coder
 # This client enables SSO authentication for the self-hosted Coder instance.
-# Coder's OIDC redirect URI: https://coder.hnatekmar.xyz/api/v2/users/oidc/callback
+# Coder's OIDC redirect URI: https://coder-hetzner.hnatekmar.xyz/api/v2/users/oidc/callback
 apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: Client
 metadata:
@@ -25,11 +25,11 @@ spec:
     serviceAccountsEnabled: false
     clientId: coder-hnatekmar-xyz
     baseUrl: /
-    rootUrl: https://coder.hnatekmar.xyz
+    rootUrl: https://coder-hetzner.hnatekmar.xyz
     validPostLogoutRedirectUris:
-      - https://coder.hnatekmar.xyz
+      - https://coder-hetzner.hnatekmar.xyz
     validRedirectUris:
-      - https://coder.hnatekmar.xyz/api/v2/users/oidc/callback
+      - https://coder-hetzner.hnatekmar.xyz/api/v2/users/oidc/callback
 ---
 apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
 kind: ClientDefaultScopes

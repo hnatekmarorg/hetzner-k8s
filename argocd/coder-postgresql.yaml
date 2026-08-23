@@ -4,7 +4,7 @@ metadata:
   name: coder-postgresql
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "-2"  # Deploy before Coder
+    argocd.argoproj.io/sync-wave: "-3"  # Deploy before Coder and its ExternalSecrets
 spec:
   project: default
   source:
@@ -14,10 +14,11 @@ spec:
     helm:
       releaseName: coder-postgresql
       values: |
+        # Let the chart auto-generate the password into its own secret
+        # (coder-postgresql, key `password`). The coder-db ExternalSecret reads
+        # that secret and templates it into CODER_PG_CONNECTION_URL for Coder,
+        # so no password is stored in OpenBao or committed here.
         auth:
-          existingSecret: coder-db-creds
-          secretKeys:
-            adminPasswordKey: postgres-password
           username: coder
           database: coder
         
