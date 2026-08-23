@@ -29,11 +29,13 @@ coder:
           name: coder-hnatekmar-xyz
           key: client_secret
     - name: CODER_OIDC_SCOPES
-      value: "openid,profile,email,offline_access"
+      value: "openid,profile,email,microprofile-jwt"
     - name: CODER_OIDC_SIGN_IN_TEXT
       value: "Sign in with SSO"
-    # Group/role sync: Keycloak ships the `groups` claim via the microprofile-jwt
-    # scope (included in the client default scopes, see coder-client.yaml).
+    # Group/role sync: the `groups` claim is carried by the microprofile-jwt
+    # scope (a client default scope on coder-hnatekmar-xyz, see coder-client.yaml).
+    # NB: do NOT add offline_access — it is not a requestable scope on these
+    # Keycloak clients and Keycloak rejects the whole request ("Invalid scopes").
     - name: CODER_OIDC_GROUP_FIELD
       value: "groups"
     - name: CODER_OIDC_USER_ROLE_FIELD
