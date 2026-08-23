@@ -1,0 +1,23 @@
+---
+# Scrape the self-hosted Coder deployment metrics.
+# CODER_PROMETHEUS_ENABLE=true exposes /metrics on the pod's "prometheus-http"
+# port (2112). The Coder Service only fronts the http port, so this is a
+# PodMonitor (like external-secrets) rather than a ServiceMonitor.
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: coder
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: coder
+  namespaceSelector:
+    matchNames:
+      - coder
+  podMetricsEndpoints:
+    - port: prometheus-http
+      interval: 30s
+      path: /metrics

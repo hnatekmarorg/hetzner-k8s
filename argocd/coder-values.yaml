@@ -1,0 +1,105 @@
+# Coder v2 Helm values
+# Self-hosted Coder (https://github.com/coder/coder) for developer + agent
+# workspaces. Exposed at https://coder.hnatekmar.xyz behind the existing Kong
+# ingress with Keycloak OIDC SSO. Metrics scraped by the homelab Prometheus
+# (see monitoring/scrapers/coder.yaml).
+#
+# Chart: https://helm.coder.com/v2 (coder/coder)
+
+coder:
+  env:
+    # ── Access URLs ────────────────────────────────────────────────────────
+    - name: CODER_ACCESS_URL
+      value: "https://coder.hnatekmar.xyz"
+    - name: CODER_WILDCARD_ACCESS_URL
+      value: "*.coder.hnatekmar.xyz"
+    - name: CODER_WILDCARD_TLS_DISABLE
+      value: "true"  # TLS terminated at Kong; workspace-app traffic is plain HTTP upstream
+
+    # ── OIDC (Keycloak) ────────────────────────────────────────────────────
+    # OIDC redirect URI configured on the Keycloak client:
+    #   https://coder.hnatekmar.xyz/api/v2/users/oidc/callback
+    - name: CODER_OIDC_ISSUER_URL
+      value: "https://sso.hnatekmar.xyz/realms/master"
+    - name: CODER_OIDC_CLIENT_ID
+      value: "coder-hnatekmar-xyz"
+    - name: CODER_OIDC_CLIENT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: coder-hnatekmar-xyz
+          key: client_secret
+    - name: CODER_OIDC_SCOPES
+      value: "openid,profile,email,offline_access"
+    - name: CODER_OIDC_SIGN_IN_TEXT
+      value: "Sign in with SSO"
+    # Group/role sync: Keycloak ships the `groups` claim via the microprofile-jwt
+    # scope (included in the client default scopes, see coder-client.yaml).
+    - name: CODER_OIDC_GROUP_FIELD
+      value: "groups"
+    - name: CODER_OIDC_USER_ROLE_FIELD
+      value: "groups"
+
+    # ── Prometheus metrics ─────────────────────────────────────────────────
+    # Enables the /metrics endpoint on :2112 (container port "prometheus-http").
+    - name: CODER_PROMETHEUS_ENABLE
+      value: "true"
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────
+  # coder-postgresql is deployed by argocd/coder-postgresql.yaml. The full
+  # connection DSN is synced from OpenBao (clusters/coder, key `dsn`) into the
+  # coder-db-creds Secret and injected here via envFrom (the secret key is the
+  # env var name: CODER_PG_CONNECTION_URL). The same Secret also holds
+  # `postgres-password` for the Bitnami chart's existingSecret. Store in OpenBao:
+  #   bao kv put clusters/coder \
+  #     password=<postgres-pass> \
+  #     dsn='postgres://coder:<postgres-pass>@coder-postgresql:5432/coder?sslmode=disable'
+  envFrom:
+    - secretRef:
+        name: coder-db-creds
+
+  # ── Image ─────────────────────────────────────────────────────────────────
+  image:
+    repo: docker.io/coder/coder
+    tag: ""  # defaults to v<chart appVersion> = v2.36.1
+
+  # ── Ingress (Kong) ────────────────────────────────────────────────────────
+  ingress:
+    enable: true
+    className: kong
+    host: coder.hnatekmar.xyz
+    # Workspace apps are served on *.coder.hnatekmar.xyz. TLS for the wildcard
+    # is NOT provisioned here (the cluster only has single-host HTTP-01 via
+    # letsencrypt-prod); Kong terminates TLS for the apex host. See docs/coder.md
+    # for wildcard-TLS notes if workspace-app HTTPS is later required.
+    wildcardHost: "*.coder.hnatekmar.xyz"
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    tls:
+      enable: true
+      secretName: coder-tls
+
+  # ── Service: ClusterIP, traffic enters via Kong ingress ───────────────────
+  service:
+    enable: true
+    type: ClusterIP
+    sessionAffinity: None
+
+  # ── Scheduling ────────────────────────────────────────────────────────────
+  # Single-node cluster: tolerate the control-plane taint like the other apps.
+  tolerations:
+    - key: node-role.kubernetes.io/control-plane
+      operator: Exists
+      effect: NoSchedule
+    - key: node-role.kubernetes.io/master
+      operator: Exists
+      effect: NoSchedule
+
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+
+  replicaCount: 1

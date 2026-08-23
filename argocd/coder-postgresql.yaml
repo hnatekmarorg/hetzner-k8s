@@ -1,0 +1,70 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: coder-postgresql
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"  # Deploy before Coder
+spec:
+  project: default
+  source:
+    repoURL: https://charts.bitnami.com/bitnami
+    chart: postgresql
+    targetRevision: 16.0.0
+    helm:
+      releaseName: coder-postgresql
+      values: |
+        auth:
+          existingSecret: coder-db-creds
+          secretKeys:
+            adminPasswordKey: postgres-password
+          username: coder
+          database: coder
+        
+        image:
+          registry: docker.io
+          repository: bitnami/postgresql
+          tag: latest
+        
+        primary:
+          persistence:
+            enabled: true
+            storageClass: local-path
+            size: 5Gi
+          
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          
+          extraEnv:
+            - name: POSTGRES_USER
+              value: coder
+            - name: POSTGRES_DB
+              value: coder
+        
+        tolerations:
+          - key: node-role.kubernetes.io/control-plane
+            operator: Exists
+            effect: NoSchedule
+          - key: node-role.kubernetes.io/master
+            operator: Exists
+            effect: NoSchedule
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: coder
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

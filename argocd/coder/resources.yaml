@@ -1,0 +1,62 @@
+---
+# Coder namespace for the self-hosted Coder v2 deployment (control plane + PG)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coder
+---
+# Syncs the Coder PostgreSQL credentials from OpenBao (clusters/coder) into the
+# coder namespace. Used by both the Bitnami postgresql chart (existingSecret) and
+# the Coder deployment (CODER_PG_CONNECTION_URL). Same pattern as keycloak-db-creds.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: coder-db
+  namespace: coder
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: local
+    kind: ClusterSecretStore
+  target:
+    name: coder-db-creds
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    # Bitnami postgresql chart (existingSecret, adminPasswordKey)
+    - secretKey: postgres-password
+      remoteRef:
+        key: coder
+        property: password
+    # Full DSN consumed by Coder via envFrom (secret key = env var name).
+    # e.g. postgres://coder:PASSWORD@coder-postgresql:5432/coder?sslmode=disable
+    - secretKey: CODER_PG_CONNECTION_URL
+      remoteRef:
+        key: coder
+        property: dsn
+---
+# Syncs the Keycloak OIDC client secret (created by Crossplane as a connection
+# secret in crossplane-system) into the coder namespace for Coder's OIDC login.
+# Mirrors the Grafana grafana-oauth ExternalSecret pattern.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: coder-oauth
+  namespace: coder
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: kubernetes-crossplane
+    kind: ClusterSecretStore
+  target:
+    name: coder-hnatekmar-xyz
+    creationPolicy: Owner
+  data:
+    - secretKey: client_secret
+      remoteRef:
+        key: coder-hnatekmar-xyz
+        property: attribute.client_secret
