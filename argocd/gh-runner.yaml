@@ -11,8 +11,10 @@
 #   * No host docker.sock, no host paths, not privileged → the runner CANNOT
 #     spawn nested containers. Container/docker-build jobs must stay on the
 #     host DIND builder; this pod handles shell/lint/test/deploy CI only.
-#   * Non-root (runAsUser 1000, runAsNonRoot, no privilege escalation).
-#   * readOnlyRootFilesystem; all state on the gh-runner PVC.
+#   * Non-root (runAsUser 1001 = the image's `runner` user, runAsNonRoot, no
+#     privilege escalation).
+#   * readOnlyRootFilesystem; all state on the gh-runner PVC mounted at the
+#     image's home (/home/runner) where run.sh and config.sh live and write.
 #   * Dedicated ServiceAccount with ZERO RBAC (a runner needs none — it just
 #     long-polls GitHub). This pod cannot touch the DIND builder, the host,
 #     or other pods beyond normal network.
@@ -50,24 +52,26 @@ spec:
       serviceAccountName: gh-runner
       automountServiceAccountToken: false   # no API creds needed
       securityContext:
-        runAsUser: 1000
+        runAsUser: 1001
         runAsNonRoot: true
-        fsGroup: 1000
+        fsGroup: 1001
         seccompProfile:
           type: RuntimeDefault
       containers:
         - name: runner
           image: ghcr.io/actions/actions-runner:latest
           imagePullPolicy: Always
-          workingDir: /actions-runner
+          workingDir: /home/runner
           # Start the agent. Registration is done once into the PVC (see docs);
-          # if not yet registered, the container exits and the runbook registers.
+          # if not yet registered, run.sh exits and the runbook registers.
+          # The init container seeds the PVC from the image's /home/runner, so
+          # run.sh/config.sh exist on the volume and survive pod regens.
           command: ["./run.sh"]
           env:
             - name: RUNNER_ALLOW_RUNASROOT
               value: "0"          # assert non-root; image default, explicit for clarity
           securityContext:
-            runAsUser: 1000
+            runAsUser: 1001
             runAsNonRoot: true
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -82,11 +86,37 @@ spec:
               memory: 2Gi
           volumeMounts:
             - name: runner-home
-              mountPath: /actions-runner
+              mountPath: /home/runner
+            # readOnlyRootFilesystem makes /tmp read-only; the .NET runner
+            # writes transient files there, so back it with an emptyDir.
+            - name: tmp
+              mountPath: /tmp
+      # Seed the PVC from the image's /home/runner on first boot. The image
+      # ships run.sh/config.sh/bin/externals there; mounting an empty PVC over
+      # /home/runner would shadow them (the original "no such file" crash).
+      # cp -a --no-clobber preserves a previously-registered .runner/.credentials
+      # across restarts, so re-registration is never needed.
+      initContainers:
+        - name: seed-home
+          image: ghcr.io/actions/actions-runner:latest
+          imagePullPolicy: IfNotPresent
+          workingDir: /home/runner
+          command: ["/bin/sh", "-c", "cp -a --no-clobber /home/runner/. /mnt/runner-home/"]
+          securityContext:
+            runAsUser: 1001
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: runner-home
+              mountPath: /mnt/runner-home
       volumes:
         - name: runner-home
           persistentVolumeClaim:
             claimName: gh-runner
+        - name: tmp
+          emptyDir: {}
       tolerations:
         - key: node-role.kubernetes.io/control-plane
           operator: Exists
