@@ -1,0 +1,19 @@
+# Server cert for the ThingsBoard MQTT TLS listener (port 8883).
+# ThingsBoard terminates TLS natively (hostNetwork binds the node port);
+# no proxy hop for device traffic. Separate secret from the Kong ingress
+# cert on purpose: device traffic survives ingress/LB changes.
+# letsencrypt-prod is HTTP-01 (Kong solves :80 for this already-live host).
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: thingsboard-mqtt
+  namespace: thingsboard
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  secretName: thingsboard-mqtt-tls
+  dnsNames:
+    - thingsboard.hnatekmar.xyz
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

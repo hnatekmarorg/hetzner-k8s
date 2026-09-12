@@ -90,3 +90,27 @@ spec:
                   key: password
             - name: TB_SERVICE_BASE_URL
               value: "https://thingsboard.hnatekmar.xyz"
+            # Native MQTT TLS termination on 8883 (thingsboard.yml transport.mqtt.ssl.*)
+            - name: MQTT_SSL_ENABLED
+              value: "true"
+            - name: MQTT_SSL_CREDENTIALS_TYPE
+              value: "PEM"
+            - name: MQTT_SSL_PEM_CERT
+              value: /certs/tls.crt
+            - name: MQTT_SSL_PEM_KEY
+              value: /certs/tls.key
+            # Surface the MQTTS checker in the UI connectivity widget
+            # (host/port default to TB_SERVICE_BASE_URL host + 8883)
+            - name: DEVICE_CONNECTIVITY_MQTTS_ENABLED
+              value: "true"
+          # Live-reload: TB polls rotated PEMs every 60s
+          # (TB_TRANSPORT_SSL_CERTIFICATE_RELOAD_ENABLED). Mount must NOT use
+          # subPath or kubelet won't sync renewed certs into the pod.
+          volumeMounts:
+            - name: mqtt-tls
+              mountPath: /certs
+              readOnly: true
+      volumes:
+        - name: mqtt-tls
+          secret:
+            secretName: thingsboard-mqtt-tls
