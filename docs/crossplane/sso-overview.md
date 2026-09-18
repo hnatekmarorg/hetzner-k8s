@@ -26,6 +26,8 @@ Keycloak Group → Keycloak Realm Role → OpenBao OIDC Role (boundGroups) → O
 | ArgoCD | https://argocd.hnatekmar.xyz/argocd | `argocd-hnatekmar-xyz` | OIDC | ArgoCD RBAC `g, hnatekmarorg-admin, role:admin` |
 | ArgoCD Bootstrap | https://argocd-bootstrap.hnatekmar.xyz | `argocd-bootstrap-hnatekmar-xyz` | OIDC | ArgoCD RBAC `g, hnatekmarorg-admin, role:admin` |
 | Grafana | https://monitoring-hetzner.hnatekmar.xyz | `grafana-hnatekmar-xyz` | OIDC (authorization code) | Grafana `role_attribute_path`: `algovectra` + `hnatekmarorg-admin` → Admin |
+| `kubectl-hnatekmar-xyz` | kubectl / kubeconfig | PUBLIC | `http://localhost:8000`, `http://localhost:18000` |
+| kubectl (kubeconfig) | — (CLI) | `kubectl-hnatekmar-xyz` | OIDC + PKCE via `kubelogin` | Kubernetes RBAC, from the token's `groups` claim |
 
 ## Identity Providers
 
@@ -51,7 +53,37 @@ Both providers sync GitHub username and email into the Keycloak user profile.
 | `grafana-hnatekmar-xyz` | Grafana | CONFIDENTIAL | `https://monitoring-hetzner.hnatekmar.xyz/login/generic_oauth` |
 
 - Manifests: `crossplane/config/keycloak/clients/*.yaml`
+- `kubectl-hnatekmar-xyz` is the only PUBLIC client here: PKCE instead of a secret, so there is
+  nothing to sync into a namespace and no `writeConnectionSecretToRef` on the resource.
 - Client secrets are written to connection secrets and synced into the service namespace via ExternalSecrets (see `argocd/argocd-external-secret.yaml`, `argocd/argocd-bootstrap-external-secret.yaml`).
+
+## Kubernetes Cluster Access
+
+Cluster access is scoped by how much the cluster matters. Every cluster belongs to **one class** and
+binds **only that class's roles**, so holding the other class's role grants nothing there:
+
+| Class | Clusters | Realm roles | ClusterRole |
+|-------|----------|-------------|-------------|
+| `infra` | bootstrap, devops/prod — clusters that must keep working | `k8s-infra-viewer` / `k8s-infra-admin` | `view` / `cluster-admin` |
+| `dev` | sandbox — free to break | `k8s-dev-viewer` / `k8s-dev-admin` | `view` / `cluster-admin` |
+
+The split is deliberate: the role that lets you break a sandbox freely (`k8s-dev-admin`) is **not** the
+role that touches the cluster everything else depends on (`k8s-infra-admin`).
+
+Both tiers use built-in ClusterRoles (`view`, `cluster-admin`) — no custom roles to audit.
+
+**Realm roles, not groups.** A Keycloak group does not reach a token unless a mapper adds it: the
+`groups` claim arrives via the `microprofile-jwt` scope (which is why it is required for OpenBao).
+Realm roles arrive through the built-in `roles` scope as `realm_access.roles`, which every client
+includes, so roles are what a cluster can reliably read.
+
+That has one consequence: `realm_access.roles` is a **nested** claim. The legacy `--oidc-*` flags
+configure a top-level claim only, so clusters use the structured `--authentication-config` with a
+claim expression and the `sso:` prefix.
+
+Manifests: `crossplane/config/keycloak/roles/k8s-*.yaml`. Assignment is either direct or via a
+group -> role mapping (`group.keycloak.crossplane.io/v1alpha1` `Roles`), if group-based membership
+management is preferred.
 
 ## OpenBao Access Levels
 

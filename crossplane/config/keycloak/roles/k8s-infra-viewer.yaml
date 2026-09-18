@@ -1,0 +1,35 @@
+---
+# Keycloak realm role: k8s-infra-viewer
+#
+# Kubernetes access for **infra** clusters, viewer tier.
+#
+# REALM ROLE, not a group, deliberately: a Keycloak group does not appear in a token unless a mapper
+# puts it there (the `groups` claim comes from the `microprofile-jwt` scope). Realm roles are
+# carried by the built-in `roles` scope as `realm_access.roles`, which every client includes, so a
+# role is what the API server can actually read.
+#
+# These exist so cluster access is scoped by how much the cluster matters:
+#   infra = must keep working  -> infra-admin is a narrow, deliberate membership
+#   dev   = sandbox, may break -> infra-admin is the everyday one
+#
+# A cluster binds only its own class's pair, so holding the other class's role grants nothing there.
+#
+# Read-only on infrastructure clusters (built-in ClusterRole: view).
+#
+# Assignment: give users this role directly, or wire a group -> role mapping (group.keycloak.
+# crossplane.io/v1alpha1 Roles) if group-based membership management is preferred.
+apiVersion: role.keycloak.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: k8s-infra-viewer
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    name: k8s-infra-viewer
+    realmId: master
+    description: "Kubernetes viewer access on infra clusters"
