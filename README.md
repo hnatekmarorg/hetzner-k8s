@@ -103,6 +103,52 @@ bao login -method=oidc role=admin
 2. Have the `bao` CLI installed (or use `vault` command)
 3. Access to the Kubernetes cluster
 
+## SSH Certificate Classes (`infra` / `dev`)
+
+SSH access is split by **class**, the same way Kubernetes cluster access is: two SSH CAs,
+one per population of machines. An infra host trusts only the infra CA, a dev host only the
+dev CA, so a certificate from the other class does not verify there at all.
+
+| Class | Hosts | CA mount | Signing path | Policies |
+|-------|-------|----------|--------------|----------|
+| `infra` | balteus, TrueNAS, GitHub runner, keepers | `hnatekmarorg-ssh-infra` | `hnatekmarorg-ssh-infra/sign/admin` | `hnatekmarorg-ssh-class-infra` |
+| `dev` | sandboxes — `kubernetes-sandbox` (VM 133) | `hnatekmarorg-ssh-dev` | `hnatekmarorg-ssh-dev/sign/admin` | `hnatekmarorg-ssh-class-dev` |
+
+The certificate's principal is the *tier* (`admin`), not the class — the class is the CA
+that signed it. Hosts install the class public key as `TrustedUserCAKeys` plus an
+`AuthorizedPrincipalsFile` listing `admin`; both classes' certificates are otherwise
+identical in shape.
+
+```bash
+# on a host (root): install the class trust anchor + sshd certificate-auth config
+scripts/ssh-ca/enroll.sh --class infra trust
+scripts/ssh-ca/enroll.sh --class infra verify
+
+# on any machine, container included (no root, no OpenBao CLI): this machine's certificate
+scripts/ssh-ca/enroll.sh dev              # == scripts/ssh-ca/enroll.sh dev issue
+scripts/ssh-ca/enroll.sh dev --ttl 168h   # for an image that is built once
+```
+
+`enroll.sh` needs only bash, ssh-keygen and curl/wget, and reads the token from
+`BAO_TOKEN`, `--token` or `~/.vault-token`. It is installable by hash:
+
+```Dockerfile
+RUN curl -fsSLo /tmp/enroll.sh        "$RAW/scripts/ssh-ca/enroll.sh"        && \
+    curl -fsSLo /tmp/enroll.sh.sha256 "$RAW/scripts/ssh-ca/enroll.sh.sha256" && \
+    (cd /tmp && sha256sum -c enroll.sh.sha256)                               && \
+    bash /tmp/enroll.sh dev --ttl 168h
+```
+
+| Policy | Path | Capabilities | Description |
+|--------|------|--------------|-------------|
+| `hnatekmarorg-ssh-class-infra` | `hnatekmarorg-ssh-infra/sign/admin` | create, update | Sign infra-class admin certificates |
+| `hnatekmarorg-ssh-class-infra` | `hnatekmarorg-ssh-infra/config/ca` | read | Read the infra CA public key (trust anchor) |
+| `hnatekmarorg-ssh-class-dev` | `hnatekmarorg-ssh-dev/sign/admin` | create, update | Sign dev-class admin certificates |
+| `hnatekmarorg-ssh-class-dev` | `hnatekmarorg-ssh-dev/config/ca` | read | Read the dev CA public key (trust anchor) |
+
+Full design, the verified contract, problems found in the existing roles, and the rollout
+plan: **[docs/crossplane/ssh-ca-classes.md](docs/crossplane/ssh-ca-classes.md)**.
+
 ## OpenBao Recovery - Required Secrets
 
 After reinitializing OpenBao, the following secrets must be manually created to restore cluster functionality:

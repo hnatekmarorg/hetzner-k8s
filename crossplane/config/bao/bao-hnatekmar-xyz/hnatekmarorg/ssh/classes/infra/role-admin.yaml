@@ -1,0 +1,50 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendRole
+metadata:
+  name: hnatekmarorg-ssh-infra-admin-role
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: "admin"
+    backend: hnatekmarorg-ssh-infra
+    keyType: "ca"
+    # default_user is the PRINCIPAL, not the unix login (`ssh root@host` is the login user).
+    # OpenBao validates it against allowed_users: with allowed_users=admin, `root` here would
+    # make every principal-less sign fail ("root is not a valid value for valid_principals")
+    # — a broken default, not a looser one. Both fields are the tier.
+    defaultUser: "admin"
+    # The class lives in the CA; the principal carries the TIER. Keeping the tier distinct
+    # from any login name is deliberate: sshd matches a certificate principal against the
+    # target login directly, with no AuthorizedPrincipalsFile involved, so a tier named `root`
+    # would be accepted by default on a host that lacks the principals file — silently
+    # skipping the gate. `admin` makes such a host refuse until the file is in place.
+    # (Measured: cases 10/11 in scripts/ssh-ca/test-class-separation.sh.)
+    allowedUsers: "admin"
+    # cidrList is deliberately NOT set: the OpenBao API documents cidr_list as
+    # "Not applicable for CA type" (it belongs to OTP-type roles), so the value the
+    # prototype carried under it did nothing. The estate's nets are pinned where the CA
+    # role can actually enforce them — as the certificate's `source-address` critical
+    # option, which sshd checks on every login.
+    #
+    # Residual, verified against a dev server: a caller holding sign rights may override
+    # critical_options, so the pin bounds a leaked *certificate*, not a leaked sign token.
+    # The class gate itself (which CA signed it) cannot be overridden this way.
+    defaultCriticalOptions:
+      source-address: "172.16.0.0/20,172.16.16.0/20,172.16.32.0/19,172.16.64.0/20,172.16.96.0/20,172.16.100.0/24,192.168.88.0/24,88.198.65.246/32"
+    ttl: "24h"
+    maxTtl: "168h"
+    allowHostCertificates: false
+    allowUserCertificates: true
+    # Lets enroll.sh stamp the certificate with key_id "<class>:<hostname>", which is what
+    # `ssh-keygen -L` and the sshd log then show. It is a label, not an authorization input:
+    # what authorizes is the signing CA plus the principal.
+    allowUserKeyIds: true
+    allowedExtensions: permit-pty,permit-port-forwarding,permit-X11-forwarding
+    defaultExtensions:
+      permit-port-forwarding: ""
+      permit-pty: ""
+      permit-X11-forwarding: ""
+    notBeforeDuration: "30s"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

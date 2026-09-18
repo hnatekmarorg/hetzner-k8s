@@ -117,6 +117,23 @@ OIDC auth backend at `auth/oidc`, discovery `https://sso.hnatekmar.xyz/realms/ma
 - Token TTLs: `admin` 24h; `algovectra`, `hnatekmarorg` 1h TTL / 4h max
 - Note: The `admin` Keycloak group is created manually (out of band); it is not managed by Crossplane.
 
+### SSH certificate classes — the same split, for machines
+
+SSH access uses the same class idea as cluster access above, with the class carried by the
+**CA** rather than by a binding: `hnatekmarorg-ssh-infra` and `hnatekmarorg-ssh-dev` are two
+CAs, a host trusts exactly one of them, and a certificate from the other class therefore
+fails to verify there. The certificate's principal is the *tier* (`admin`), enforced by the
+host's `AuthorizedPrincipalsFile`.
+
+| Class | Hosts | Signing path | Policies |
+|-------|-------|--------------|----------|
+| `infra` | balteus, TrueNAS, GitHub runner, keepers | `hnatekmarorg-ssh-infra/sign/admin` | `hnatekmarorg-ssh-class-infra` |
+| `dev` | sandboxes — `kubernetes-sandbox` (VM 133) | `hnatekmarorg-ssh-dev/sign/admin` | `hnatekmarorg-ssh-class-dev` |
+
+The `hnatekmarorg-ssh-class-*` policies are not bound to an OIDC role yet: they are shaped
+so a per-class group → OIDC role mapping can grant them declaratively. Design and rollout:
+`docs/crossplane/ssh-ca-classes.md`.
+
 ## ArgoCD Access
 
 Both ArgoCD instances map OIDC group claims to the built-in `role:admin`:

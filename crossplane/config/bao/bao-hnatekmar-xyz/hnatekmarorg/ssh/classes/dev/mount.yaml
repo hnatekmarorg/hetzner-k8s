@@ -1,0 +1,15 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: hnatekmarorg-ssh-dev
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    # Class = CA. Developer/sandbox hosts trust only this key, so infra-class certificates
+    # carry no authority there in either direction.
+    path: hnatekmarorg-ssh-dev
+    type: ssh
+    description: "Dev-class SSH CA (sandboxes, free to break) managed by Crossplane"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
