@@ -49,7 +49,9 @@ spec:
     # Required for the `groups` claim to reach the token, which is what drives Kubernetes RBAC.
     fullScopeAllowed: true
     baseUrl: /
-    rootUrl: /
+    # rootUrl deliberately omitted: it is a web origin and Keycloak rejects a relative value ("/" is
+    # not a valid URL). A native CLI client has no web root, and every redirect URI below is absolute,
+    # so omitting it is correct. (Adding a root URL here would also require an adminUrl.)
     webOrigins:
       - http://localhost:8000
       - http://localhost:18000
