@@ -17,7 +17,7 @@ Declarative OpenBao config managed by **Crossplane** (`vault.upbound.io` provide
 
 Each tenant gets its own `*-agent` machine identity (kubernetes SA role + policy scoped to its mount). Today:
 - `hermes-agent` — kubernetes (in-cluster SA `hermes/hermes`) + approle (for `.180` Hermes). Policy: `hermes-agent` → `hermes/*`.
-- `bao-hnatekmar-xyz` (kubernetes SA `external-secrets/external-secrets`) — ESO stores. Policies: `clusters-secret-creator`, `devops-github-reader`, `hermes-agent`.
+- `bao-hnatekmar-xyz` (kubernetes SA `external-secrets/external-secrets`) — ESO stores. Policies: `algovectra`, `clusters-secret-creator`, `devops-github-reader`, `hermes-agent`.
 - Planned: `algovectra-agent` etc. as new agents land (e.g. runpod scaler, Phase 4).
 
 ## Secret registry
@@ -27,6 +27,7 @@ KV path scheme (CLI): `<mount>/<service>/<secret>`. The internal `/data/` segmen
 | Mount | Path | Fields | Consumer | Policy gate |
 |---|---|---|---|---|
 | `algovectra` | `github` | token | ESO / bots | `algovectra` |
+| `algovectra` | `dockerhub` | username, password | ESO → default/dockerhub (for pizza-admin, pizza-backend; Gitea migration pending) | `algovectra` |
 | `algovectra` | `runpod` | api_key, components_url, pizza_url | runpod scaler (planned), `.envrc` | `algovectra` |
 | `algovectra` | `s3/hot`, `s3/cold` | host, ACCESS_KEY, SECRET_KEY | runpod scaler, pods | `algovectra` |
 | `devops` | `github/algovectra` | clientId, clientSecret | ESO `github-algovectra` | `devops-github-reader` |

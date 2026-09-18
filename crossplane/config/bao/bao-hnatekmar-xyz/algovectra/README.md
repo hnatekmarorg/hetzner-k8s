@@ -5,6 +5,7 @@ KV mount: `algovectra` (kv-v2). Policy: `algovectra` (own mount only), `algovect
 | Path | Fields | Consumer |
 |---|---|---|
 | `algovectra/github` | token | ESO / bots |
+| `algovectra/dockerhub` | username, password | ESO → default/dockerhub (for pizza-admin, pizza-backend; Gitea migration pending) |
 | `algovectra/runpod` | api_key, components_url, pizza_url | runpod scaler (planned), `.envrc` |
 | `algovectra/s3/hot` | host, ACCESS_KEY, SECRET_KEY | runpod scaler, pods |
 | `algovectra/s3/cold` | host, ACCESS_KEY, SECRET_KEY | runpod scaler, pods |
