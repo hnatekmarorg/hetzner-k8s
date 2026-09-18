@@ -137,6 +137,8 @@ policy prevents a test sshd from exec'ing a shell:
 7 infra cert -> host trusting BOTH CAs           accepted   <- the merged state, for contrast
 8 infra cert -> host with no principals file     refused    <- fails closed
 9 infra cert pinned to 10.0.0.0/8 from 127.0.0.1 refused    <- source-address enforced by sshd
+10 cert principal 'root' -> host with no principals file  accepted  <- sshd's direct-match path
+11 cert principal 'admin' -> host with no principals file refused   <- why the tier is not a login name
 ```
 
 **`scripts/ssh-ca/test-openbao-contract.sh`** — a `bao server -dev` (in-memory, no live
@@ -160,9 +162,19 @@ sign its own class, read its own trust anchor, and is refused on the other class
 2. **`key_id` is refused unless the role sets `allow_user_key_ids: true`** — the engine
    answers `setting key_id is not allowed by role` otherwise. Hence the field on both roles:
    it is what makes `ssh-keygen -L` and the sshd log say *which machine, which class*.
-3. **`default_user` is the principal, not the unix login.** A role that leaves it at `root`
-   can mint a `principals = [root]` certificate, which a host with `TrustedUserCAKeys` but no
-   `AuthorizedPrincipalsFile` would accept for `root` — i.e. it would skip the tier gate.
+3. **`default_user` is the principal — and it must be a member of `allowed_users`.**
+   OpenBao validates it: with `allowed_users: admin`, a role whose `default_user` is `root`
+   refuses even a principal-less sign (`root is not a valid value for valid_principals`), so
+   `default_user: root` here is a *broken* default, not a looser one. The class roles set both
+   fields to `admin`, and `ssh root@host` is unaffected — the login user comes from the client,
+   and the principals file is what admits `admin` for it.
+   **The tier deliberately is not a login name.** sshd matches a certificate principal against
+   the target login *directly*, with no `AuthorizedPrincipalsFile` involved. Measured
+   (cases 10/11): on a host with `TrustedUserCAKeys` and no principals file, a
+   `principals=[root]` certificate is accepted for `root` while the tier-gated `admin` one is
+   refused. A tier named `root` would therefore work by default on any unconfigured host —
+   silently skipping the gate — whereas `admin` makes such a host refuse everything until the
+   principals file is in place. Fails closed, by naming.
 4. **Debian's `sshd_config` has no `sshd_config.d` include by default** (Proxmox hosts are
    Debian). `enroll.sh` detects this, inserts the include, and keeps `sshd_config~` as the
    undo; without it the drop-in is a file that looks installed and does nothing.

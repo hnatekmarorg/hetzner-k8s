@@ -154,6 +154,21 @@ else
   ok "signing with valid_principals=root is refused (allowed_users=$TIER)"
 fi
 
+# default_user is validated against allowed_users. A role that defaults to the login name
+# (root) while allowing only `admin` refuses even a principal-less sign — which is why
+# `default_user: root` on the class roles would be a *broken* default, not a looser one.
+cat >"$WORKDIR/role_mismatch.json" <<EOF
+{"key_type": "ca", "default_user": "root", "allowed_users": "$TIER",
+ "allow_user_certificates": true, "ttl": "1h"}
+EOF
+"$CLI" write "${MOUNTS[0]}/roles/mismatch" @"$WORKDIR/role_mismatch.json" >/dev/null
+if "$CLI" write "${MOUNTS[0]}/sign/mismatch" public_key=@"$WORKDIR/key.pub" \
+     cert_type=user ttl=1h >/dev/null 2>"$WORKDIR/mismatch.err"; then
+  bad "default_user=root + allowed_users=$TIER issued a principal-less certificate"
+else
+  ok "default_user outside allowed_users is refused ($(sed 's/^\* //' "$WORKDIR/mismatch.err" | tail -1))"
+fi
+
 # ------------------------------------------------------------------------ policy split
 
 for i in "${!MOUNTS[@]}"; do

@@ -83,6 +83,9 @@ sign() {  # <ca> <key> <principals> <outfile>
 CERT_INFRA="$(sign "$WORKDIR/ca_infra" "$WORKDIR/key_infra"  admin  "$WORKDIR/cert_infra.pub")"
 CERT_DEV="$(sign "$WORKDIR/ca_dev"     "$WORKDIR/key_dev"    admin  "$WORKDIR/cert_dev.pub")"
 CERT_VIEWER="$(sign "$WORKDIR/ca_dev"  "$WORKDIR/key_viewer" viewer "$WORKDIR/cert_viewer.pub")"
+# A certificate whose principal is the target login name — what `default_user: root` would
+# have produced. Cases 10/11 exist to show what sshd does with it.
+CERT_ROOTPRINC="$(sign "$WORKDIR/ca_infra" "$WORKDIR/key_infra" root "$WORKDIR/cert_rootprinc.pub")"
 
 # Case 9: a certificate that is correct in every other way, but pinned to a source range
 # the client is not in — this is the `source-address` critical option the class roles set
@@ -104,7 +107,7 @@ echo admin > "$WORKDIR/principals/$USER_TARGET"      # infra + dev hosts: admin 
 
 # ------------------------------------------------------------------------- sshd configs
 
-start_sshd() {  # <name> <port> <ca-file> <principals-dir>
+start_sshd() {  # <name> <port> <ca-file> <principals-dir> ("-" = no AuthorizedPrincipalsFile)
   local name="$1" port="$2" ca="$3" princ="$4"
   ssh-keygen -q -t ed25519 -N '' -f "$WORKDIR/hostkey_$name"
   cat >"$WORKDIR/sshd_$name.conf" <<EOF
@@ -114,7 +117,7 @@ HostKey $WORKDIR/hostkey_$name
 PidFile $WORKDIR/sshd_$name.pid
 LogLevel VERBOSE
 TrustedUserCAKeys $ca
-AuthorizedPrincipalsFile $princ/%u
+$([[ "$princ" == "-" ]] || echo "AuthorizedPrincipalsFile $princ/%u")
 AuthorizedKeysFile $WORKDIR/authorized_keys/%u
 PermitRootLogin yes
 PubkeyAuthentication yes
@@ -143,6 +146,9 @@ cat "$WORKDIR/ca_infra.pub" "$WORKDIR/ca_dev.pub" > "$WORKDIR/ca_both.pub"
 start_sshd both  "$BOTH_PORT"  "$WORKDIR/ca_both.pub"  "$WORKDIR/principals"
 # A host whose tier gate is empty: the certificate must still be refused (case 8).
 start_sshd noprinc "$((PORT_BASE + 3))" "$WORKDIR/ca_infra.pub" "$WORKDIR/principals_empty"
+# A host with NO AuthorizedPrincipalsFile at all — the old "CA certificate is root access"
+# shape. Cases 10/11 show why the tier principal must not be a login name.
+start_sshd bare "$((PORT_BASE + 4))" "$WORKDIR/ca_infra.pub" "-"
 
 # ---------------------------------------------------------------------------- the matrix
 #
@@ -221,9 +227,19 @@ else
   printf '  \033[33mSKIP\033[0m  case 9: this ssh-keygen will not put source-address on a user certificate\n'
 fi
 
+# 10/11: the tier principal must NOT be a login name. sshd matches a certificate principal
+# against the target login directly, with no AuthorizedPrincipalsFile involved — so on a host
+# that lacks the principals file, a `principals=[root]` certificate is accepted while the
+# tier-gated `admin` one is refused. A tier named `root` would therefore work by default on
+# unconfigured hosts and silently skip the gate; `admin` makes them fail closed instead.
+expect allow "10 cert principals=[root] -> host with NO principals file"  "$WORKDIR/sshd_bare.log" "$((PORT_BASE + 4))" "$WORKDIR/key_infra" "$CERT_ROOTPRINC"
+expect deny  "11 cert principals=[admin] -> host with NO principals file" "$WORKDIR/sshd_bare.log" "$((PORT_BASE + 4))" "$WORKDIR/key_infra" "$CERT_INFRA"
+
 echo
 echo "note: case 7 is the state a single shared CA would produce — every class certificate"
 echo "      works on every host. It is what 'enroll.sh verify' refuses to leave behind."
+echo "      Cases 10/11 are the same argument for the principal: a tier equal to a login name"
+echo "      (root) is accepted by the direct-match path, so it cannot express a gate."
 
 
 if [[ "$fail" == 0 ]]; then

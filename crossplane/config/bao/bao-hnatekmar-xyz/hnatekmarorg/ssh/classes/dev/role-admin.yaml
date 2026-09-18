@@ -9,8 +9,8 @@ spec:
     name: "admin"
     backend: hnatekmarorg-ssh-dev
     keyType: "ca"
-    # Same tier contract as the infra role: default_user is the principal, so the
-    # certificate shape does not depend on how it was requested.
+    # Same tier contract as the infra role: default_user is the principal and must be a
+    # member of allowed_users (OpenBao validates it), and it is deliberately not a login name.
     defaultUser: "admin"
     # Same tier contract as the infra role; the class is what differs, and it differs
     # in the CA rather than in this field.

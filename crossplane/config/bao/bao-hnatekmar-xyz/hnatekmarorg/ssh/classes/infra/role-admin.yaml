@@ -9,14 +9,17 @@ spec:
     name: "admin"
     backend: hnatekmarorg-ssh-infra
     keyType: "ca"
-    # default_user is the PRINCIPAL, not the unix login: with no principal requested the
-    # certificate is still issued as `admin`, so a principal-less sign cannot produce an
-    # ungated root certificate that skips AuthorizedPrincipalsFile on the target host.
+    # default_user is the PRINCIPAL, not the unix login (`ssh root@host` is the login user).
+    # OpenBao validates it against allowed_users: with allowed_users=admin, `root` here would
+    # make every principal-less sign fail ("root is not a valid value for valid_principals")
+    # — a broken default, not a looser one. Both fields are the tier.
     defaultUser: "admin"
-    # The class lives in the CA; the principal carries the TIER. Infra hosts accept principal
-    # `admin` only, so a future viewer role is refused there by sshd's AuthorizedPrincipalsFile
-    # without touching key material. The login user is still root (ssh root@host) — that is
-    # the AuthorizedPrincipalsFile's `%u`, not this field.
+    # The class lives in the CA; the principal carries the TIER. Keeping the tier distinct
+    # from any login name is deliberate: sshd matches a certificate principal against the
+    # target login directly, with no AuthorizedPrincipalsFile involved, so a tier named `root`
+    # would be accepted by default on a host that lacks the principals file — silently
+    # skipping the gate. `admin` makes such a host refuse until the file is in place.
+    # (Measured: cases 10/11 in scripts/ssh-ca/test-class-separation.sh.)
     allowedUsers: "admin"
     # cidrList is deliberately NOT set: the OpenBao API documents cidr_list as
     # "Not applicable for CA type" (it belongs to OTP-type roles), so the value the
