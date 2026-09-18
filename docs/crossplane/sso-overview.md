@@ -77,9 +77,26 @@ Both tiers use built-in ClusterRoles (`view`, `cluster-admin`) — no custom rol
 Realm roles arrive through the built-in `roles` scope as `realm_access.roles`, which every client
 includes, so roles are what a cluster can reliably read.
 
-That has one consequence: `realm_access.roles` is a **nested** claim. The legacy `--oidc-*` flags
-configure a top-level claim only, so clusters use the structured `--authentication-config` with a
-claim expression and the `sso:` prefix.
+**Where the cluster reads them from.** Roles attached to a user are propagated into the token's
+`groups` array by the realm's mappers — the same convention that gives OpenBao its `boundGroups` and
+ArgoCD its group bindings. Clusters therefore read `groups` with the legacy `--oidc-*` flags and a
+`sso:` prefix, exactly like every other service here:
+
+```
+oidc-issuer-url:   https://sso.hnatekmar.xyz/realms/master
+oidc-client-id:    kubectl-hnatekmar-xyz
+oidc-username-claim: email
+oidc-groups-claim:   groups
+oidc-username-prefix: sso:
+oidc-groups-prefix:   sso:
+```
+
+(Realm roles are *also* exposed as the nested `realm_access.roles`, but nothing consumes that: the
+legacy flags read top-level claims only, and the structured `AuthenticationConfiguration` that could
+read a nested one is unusable on Talos 1.14 — the file cannot be made visible inside the kube-apiserver
+static pod, siderolabs/talos#14394.)
+
+Bindings therefore name the role with the prefix: `sso:k8s-dev-admin`, `sso:k8s-infra-viewer`.
 
 Manifests: `crossplane/config/keycloak/roles/k8s-*.yaml`. Assignment is either direct or via a
 group -> role mapping (`group.keycloak.crossplane.io/v1alpha1` `Roles`), if group-based membership
