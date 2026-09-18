@@ -48,12 +48,14 @@ difference is observable rather than asserted.
 | `hnatekmarorg/ssh/classes/{infra,dev}/ca.yaml` | the class's CA key (generated in OpenBao, never in git) |
 | `hnatekmarorg/ssh/classes/{infra,dev}/role-admin.yaml` | the `admin` signing role: user certs, principal `admin` |
 | `hnatekmarorg/policies/ssh-class-{infra,dev}.yaml` | who may sign which class, plus read of the class trust anchor |
-| `scripts/ssh-ca/enroll.sh` | runs on a host: `trust` / `issue` / `verify` / `status` |
-| `scripts/ssh-ca/test-class-separation.sh` | proves the sshd contract without OpenBao (9 cases) |
-| `scripts/ssh-ca/test-openbao-contract.sh` | proves the OpenBao contract on a throwaway dev server (16 checks) |
+| `scripts/ssh-ca/enroll.sh` | runs on a machine: `issue` (default) / `trust` / `verify` / `status` |
+| `scripts/ssh-ca/enroll.sh.sha256` | published hash for the `curl | bash` path (regenerate on every change) |
+| `scripts/ssh-ca/test-class-separation.sh` | proves the sshd contract without OpenBao (11 cases) |
+| `scripts/ssh-ca/test-openbao-contract.sh` | proves the OpenBao contract on a throwaway dev server (18 checks) |
+| `scripts/ssh-ca/test-enroll.sh` | proves `enroll.sh` end to end: guards, the CLI-less client path, the hash, dry-run immutability (22 checks) |
 
-Class names are validated, never guessed: an absent or misspelled `--class` is a hard
-error, exactly as `clusterClass` refuses to default. Guessing wrong here would mean a host
+Class names are validated, never guessed: an absent, misspelled or mis-cased class is a hard
+error, exactly as `clusterClass` refuses to default. Guessing wrong here would mean a machine
 trusting the wrong population's CA.
 
 ## The contract
@@ -90,42 +92,71 @@ Two behaviours worth knowing because they are how the contract holds:
 - The `admin` role sets `default_user: admin`, so a caller who requests no principal still
   gets `principals = [admin]`. There is no second certificate shape that would skip the gate.
 
-**The machine's own identity** (`enroll.sh --class <class> issue`) is the same mechanism
-from the other side: key + certificate in `/etc/ssh/openbao-client/`, wired into
-`/etc/ssh/ssh_config.d/`, so the host presents its class certificate when it SSHs out.
-`IdentitiesOnly` is deliberately *not* set there — on an existing host that would break
-every other key it uses. Setting it is the hardening step once static keys are gone.
-
 ## Enrollment
 
-```bash
-# an infra host: balteus, TrueNAS, the GitHub runner, keepers
-scripts/ssh-ca/enroll.sh --class infra trust    # trust the infra CA, install sshd config
-scripts/ssh-ca/enroll.sh --class infra issue    # mint + install this host's admin cert
-scripts/ssh-ca/enroll.sh --class infra verify   # what is installed, and what sshd resolves
+`enroll.sh` needs **bash, ssh-keygen and curl** (or wget). No OpenBao CLI, no jq, no python3,
+no systemd, and `issue` needs no root: it is built to run as an unprivileged user inside a
+container, which is also its default command.
 
-# a developer/sandbox host: kubernetes-sandbox (VM 133)
-scripts/ssh-ca/enroll.sh --class dev trust
-scripts/ssh-ca/enroll.sh --class dev issue
-scripts/ssh-ca/enroll.sh --class dev verify
+```bash
+# host (needs root: writes /etc/ssh and reloads sshd)
+enroll.sh --class infra trust                 # trust the infra CA, install the sshd config
+enroll.sh --class infra trust --no-reload     # ... without touching sshd
+enroll.sh --class dev verify                  # what is installed, and what sshd resolves
+
+# machine identity (works unprivileged, in a container, as CI)
+enroll.sh dev                                 # == enroll.sh dev issue
+enroll.sh dev --ttl 168h                      # longer-lived, for an image built once
+enroll.sh dev --dry-run                       # print every change, write nothing
+enroll.sh --check-hash                        # verify this file against its published sha256
 ```
 
-`verify` fails if both classes' CAs are trusted by the same host — that state is the
-silent class merge, and a host should never be in it.
+`issue` writes the key and certificate to `${CLIENT_PREFIX:-$HOME/.ssh/openbao}` and wires
+them into `~/.ssh/config.d/openbao-<class>.conf` (adding the `Include` to `~/.ssh/config` if
+it is absent, keeping `~/.ssh/config~` as the undo). `verify` fails if both classes' CAs are
+trusted by the same host — that state is the silent class merge.
 
-Credentials for `trust`/`issue`: a class-scoped token (policy
-`hnatekmarorg-ssh-class-<class>`) for a machine; the human admin token works too but is not
-what a server should carry. `trust` needs only `read` on `<mount>/config/ca`, which returns
-the **public** key.
+**Container / Dockerfile use.** `$RAW` must be a commit, not `main`, and the token should
+come from a BuildKit secret: a token in a `RUN` line or an `ARG` ends up in the image
+history.
+
+```Dockerfile
+RUN curl -fsSLo /tmp/enroll.sh        "$RAW/scripts/ssh-ca/enroll.sh"        && \
+    curl -fsSLo /tmp/enroll.sh.sha256 "$RAW/scripts/ssh-ca/enroll.sh.sha256" && \
+    (cd /tmp && sha256sum -c enroll.sh.sha256)                               && \
+    bash /tmp/enroll.sh dev --ttl 168h
+```
+
+`--check-hash` does the same check from inside the script: it compares this file against
+`ENROLL_EXPECT_SHA256` if set, else against the sibling `enroll.sh.sha256`, and refuses to
+run on a mismatch. Regenerate the sibling with
+`sha256sum enroll.sh > enroll.sh.sha256` — `test-enroll.sh` fails if it has gone stale.
+
+Two operational notes:
+
+- **A certificate baked into an image expires with it.** The 24h role TTL is a poor fit for a
+  build-once image, so the example requests `--ttl 168h` (the role's max). The alternative is
+  to issue at container start (an entrypoint) and keep the short TTL — pick per use case.
+- **ssh reads `~/.ssh/config` from the password database, not `$HOME`.** enroll.sh installs
+  into `$HOME` (which is what you want in a container). If you run it with a `HOME` that
+  differs from your passwd entry, point ssh at it explicitly: `ssh -F $HOME/.ssh/config …`.
+  `verify` says so when it cannot resolve the certificate.
+
+Credentials: `BAO_TOKEN` / `VAULT_TOKEN`, `--token`, or `~/.vault-token` (what login writes).
+A machine should carry a class-scoped token (policy `hnatekmarorg-ssh-class-<class>`), never
+the human admin token; the token is never printed. `trust` additionally needs `read` on
+`<mount>/config/ca`, which returns the **public** key only.
 
 ## Verification
 
-Both suites are hermetic and were run as part of this prototype.
+Three hermetic harnesses, run by hand — `bash scripts/ssh-ca/test-*.sh`, about a minute
+together. They need `curl`, `ssh-keygen` and (for the two that start a server) a `bao` or
+`vault` binary; nothing else, and no live infrastructure.
 
-**`scripts/ssh-ca/test-class-separation.sh`** — two local CAs, four throwaway sshds on
-127.0.0.1, nothing under `/etc/ssh` touched. Probes authentication only (`ssh -N` + timeout;
-124 = accepted, 255 = refused), so the result cannot be confounded by hosts whose SELinux
-policy prevents a test sshd from exec'ing a shell:
+**`test-class-separation.sh`** — two local CAs, five throwaway sshds on 127.0.0.1, nothing
+under `/etc/ssh` touched. Probes authentication only (`ssh -N` + timeout; 124 = accepted,
+255 = refused), so the result cannot be confounded by hosts whose SELinux policy prevents a
+test sshd from exec'ing a shell:
 
 ```
 1 infra cert  -> infra host                      accepted
@@ -141,24 +172,33 @@ policy prevents a test sshd from exec'ing a shell:
 11 cert principal 'admin' -> host with no principals file refused   <- why the tier is not a login name
 ```
 
-**`scripts/ssh-ca/test-openbao-contract.sh`** — a `bao server -dev` (in-memory, no live
-infra): two independent class CAs, the role fields round-trip, the issued certificate
-carries `principals = admin`, the key id, a 24h window and the `source-address` pin, a
-request for `valid_principals = root` is refused, and a token holding one class's policy can
-sign its own class, read its own trust anchor, and is refused on the other class.
+**`test-openbao-contract.sh`** — a `bao server -dev` (in-memory): two independent class CAs,
+the role fields round-trip, the issued certificate carries `principals = admin`, the key id,
+a 24h window and the `source-address` pin, a request for `valid_principals = root` is
+refused, `default_user` outside `allowed_users` is refused, and a token holding one class's
+policy can sign its own class, read its own trust anchor, and is refused on the other class.
 
-## Findings worth acting on outside this prototype
+**`test-enroll.sh`** — a real run of the container/CI path: a throwaway OpenBao, a fake
+`HOME`, and `bao`/`vault` replaced by stubs that fail if called, so "no OpenBao CLI needed"
+is enforced rather than assumed. It checks the class guard (absent, misspelled, mis-cased),
+that `enroll.sh dev --ttl 168h` installs a certificate with the right principal, key id, TTL
+and CA, that **ssh really resolves the identity** through the `~/.ssh/config` include, that a
+dev token is refused on the infra signing path, that the published sha256 matches, and that
+`--dry-run` leaves `/etc/ssh` and `$HOME/.ssh` byte-identical. It also checks its own fixture
+(policy created, token can sign) before blaming `enroll.sh` for anything.
 
-1. **`cidrList` does nothing on these roles — including the ones already in this repo.**
+## Findings from building it
+
+1. **`cidrList` does nothing on CA-type roles — including the ones already in this repo.**
    The OpenBao API documents `cidr_list` as *"Not applicable for CA type"* (it belongs to
-   OTP-type roles), and a dev-server test confirms it: a CA role with `cidr_list` set issues
-   a certificate with `Critical Options: (none)`. So `ssh/role.yaml` and `ssh/infra-role.yaml`
-   (and `algovectra/ssh/role.yaml`) carry dead config, and the overhaul plan's Phase 2 step 1
-   (*"tighten cidrList 0.0.0.0/0 → …"*) would not have changed behaviour. The class roles
-   therefore use `defaultCriticalOptions.source-address` instead — verified to land on the
-   certificate and enforced by sshd (case 9).
+   OTP-type roles), and a dev-server test confirms it: a CA role with `cidr_list` set issues a
+   certificate with `Critical Options: (none)`. So `ssh/role.yaml`, `ssh/infra-role.yaml` and
+   `algovectra/ssh/role.yaml` carry dead config, and the overhaul plan's Phase 2 step 1
+   (*"tighten cidrList 0.0.0.0/0 → …"*) would not have changed behaviour. The class roles use
+   `defaultCriticalOptions.source-address` instead — verified to land on the certificate and
+   enforced by sshd (case 9).
    Residual: a caller holding *sign* rights can override `critical_options`, so this bounds a
-   leaked certificate, not a leaked sign token. The class gate cannot be overridden this way.
+   leaked certificate, not a leaked signing token. The class gate cannot be overridden this way.
 2. **`key_id` is refused unless the role sets `allow_user_key_ids: true`** — the engine
    answers `setting key_id is not allowed by role` otherwise. Hence the field on both roles:
    it is what makes `ssh-keygen -L` and the sshd log say *which machine, which class*.
@@ -166,8 +206,7 @@ sign its own class, read its own trust anchor, and is refused on the other class
    OpenBao validates it: with `allowed_users: admin`, a role whose `default_user` is `root`
    refuses even a principal-less sign (`root is not a valid value for valid_principals`), so
    `default_user: root` here is a *broken* default, not a looser one. The class roles set both
-   fields to `admin`, and `ssh root@host` is unaffected — the login user comes from the client,
-   and the principals file is what admits `admin` for it.
+   fields to `admin`, and `ssh root@host` is unaffected — the login user comes from the client.
    **The tier deliberately is not a login name.** sshd matches a certificate principal against
    the target login *directly*, with no `AuthorizedPrincipalsFile` involved. Measured
    (cases 10/11): on a host with `TrustedUserCAKeys` and no principals file, a
@@ -175,10 +214,15 @@ sign its own class, read its own trust anchor, and is refused on the other class
    refused. A tier named `root` would therefore work by default on any unconfigured host —
    silently skipping the gate — whereas `admin` makes such a host refuse everything until the
    principals file is in place. Fails closed, by naming.
-4. **Debian's `sshd_config` has no `sshd_config.d` include by default** (Proxmox hosts are
+4. **Key material needs JSON unescaping.** OpenBao returns `signed_key` with a trailing
+   newline, JSON-escaped as `\n`. A naive `sed` extraction keeps the two characters and
+   ssh-keygen rejects the certificate (`invalid format`) — which cost a debugging round, and
+   is why `enroll.sh` now decodes the escapes *and* parses every key it installs before
+   installing it.
+5. **Debian's `sshd_config` has no `sshd_config.d` include by default** (Proxmox hosts are
    Debian). `enroll.sh` detects this, inserts the include, and keeps `sshd_config~` as the
    undo; without it the drop-in is a file that looks installed and does nothing.
-5. **Talos is out of band**: cluster nodes take the CA through the machine config
+6. **Talos is out of band**: cluster nodes take the CA through the machine config
    (`ssh: userCAs:`), not this script.
 
 ## Rollout (next steps, not done here)
@@ -193,9 +237,9 @@ sign its own class, read its own trust anchor, and is refused on the other class
    token or an out-of-band token. A per-class Keycloak group → OpenBao OIDC role
    (`tokenPolicies: [hnatekmarorg-ssh-class-infra]`) is the declarative version, and the
    `hnatekmarorg-ssh-class-*` policies are already shaped for it.
-5. Renewal: certificates are 24h. Renewal is re-`issue` today; an automated path (systemd
-   timer with a class-scoped token, or a k8s-auth-backed identity for in-cluster hosts) is
-   the next iteration. Nothing to build until a host actually depends on it.
+5. Renewal: certificates are 24h (168h max). Renewal is re-`issue` today; an automated path
+   (systemd timer, container entrypoint, or a k8s-auth-backed identity for in-cluster hosts)
+   is the next iteration. Nothing to build until a machine actually depends on it.
 6. Host certificates: the class CAs are CAs, so `allowHostCertificates` + a `host` role per
    class is a one-field change when host-cert trust is wanted — the class then covers both
    directions, and a client trusts the one class CA it needs.

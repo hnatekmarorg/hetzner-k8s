@@ -120,10 +120,23 @@ that signed it. Hosts install the class public key as `TrustedUserCAKeys` plus a
 identical in shape.
 
 ```bash
-# on a host: install the class trust anchor, then mint its own admin certificate
+# on a host (root): install the class trust anchor + sshd certificate-auth config
 scripts/ssh-ca/enroll.sh --class infra trust
-scripts/ssh-ca/enroll.sh --class infra issue
 scripts/ssh-ca/enroll.sh --class infra verify
+
+# on any machine, container included (no root, no OpenBao CLI): this machine's certificate
+scripts/ssh-ca/enroll.sh dev              # == scripts/ssh-ca/enroll.sh dev issue
+scripts/ssh-ca/enroll.sh dev --ttl 168h   # for an image that is built once
+```
+
+`enroll.sh` needs only bash, ssh-keygen and curl/wget, and reads the token from
+`BAO_TOKEN`, `--token` or `~/.vault-token`. It is installable by hash:
+
+```Dockerfile
+RUN curl -fsSLo /tmp/enroll.sh        "$RAW/scripts/ssh-ca/enroll.sh"        && \
+    curl -fsSLo /tmp/enroll.sh.sha256 "$RAW/scripts/ssh-ca/enroll.sh.sha256" && \
+    (cd /tmp && sha256sum -c enroll.sh.sha256)                               && \
+    bash /tmp/enroll.sh dev --ttl 168h
 ```
 
 | Policy | Path | Capabilities | Description |
