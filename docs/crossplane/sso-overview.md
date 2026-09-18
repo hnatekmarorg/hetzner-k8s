@@ -81,6 +81,22 @@ That has one consequence: `realm_access.roles` is a **nested** claim. The legacy
 configure a top-level claim only, so clusters use the structured `--authentication-config` with a
 claim expression and the `sso:` prefix.
 
+**How the roles reach the cluster.** Kubernetes' OIDC authenticator reads TOP-LEVEL claims only, and
+realm roles are nested under `realm_access.roles`. The structured `AuthenticationConfiguration` that
+could read a nested claim is not usable on Talos 1.14 (the file cannot be made visible inside the
+kube-apiserver static pod — siderolabs/talos#14394), so the claim is flattened on the Keycloak side by
+an explicit protocol mapper:
+
+```
+kubectl-hnatekmar-xyz  --ProtocolMapper-->  k8s-roles (top-level, multi-valued)
+```
+
+The mapper sets `id.token.claim`, which is the one that matters: kubectl presents the ID token. A mapper
+that populated only the access token would produce credentials that authenticate but carry no roles,
+which looks exactly like an RBAC misconfiguration.
+
+Manifests: `crossplane/config/keycloak/clients/kubectl-mapper-k8s-roles.yaml`.
+
 Manifests: `crossplane/config/keycloak/roles/k8s-*.yaml`. Assignment is either direct or via a
 group -> role mapping (`group.keycloak.crossplane.io/v1alpha1` `Roles`), if group-based membership
 management is preferred.

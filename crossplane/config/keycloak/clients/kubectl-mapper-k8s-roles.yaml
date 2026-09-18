@@ -1,0 +1,49 @@
+---
+# Protocol mapper: realm roles -> a TOP-LEVEL claim for Kubernetes
+#
+# WHY THIS EXISTS
+# Kubernetes' OIDC authenticator can only read a TOP-LEVEL claim (`--oidc-groups-claim`). Keycloak's
+# realm roles live at `realm_access.roles`, which is NESTED, and the structured
+# `AuthenticationConfiguration` that could read a nested claim is unusable on Talos 1.14: the file
+# cannot be made visible inside the kube-apiserver static pod (siderolabs/talos#14394). So the claim
+# has to be flattened on the Keycloak side instead.
+#
+# NOT via the built-in `microprofile-jwt` scope, which is how OpenBao gets its `groups` claim. That
+# works, but it is implicit and scope-dependent — the claim appears only if the scope is attached, and
+# changing the scopes silently changes what the API server can authorise on. An explicit mapper makes
+# the contract visible.
+#
+# `id.token.claim` is the one that matters: kubectl sends the ID token, not the access token. A mapper
+# that only populates the access token produces a token that authenticates and carries no roles, which
+# looks exactly like an RBAC misconfiguration.
+#
+# USED BY
+# The clusters' API servers set `--oidc-groups-claim=k8s-roles` (plus issuer, client id, and the `sso:`
+# prefixes). The roles themselves are k8s-{dev,infra}-{viewer,admin}.
+apiVersion: client.keycloak.crossplane.io/v1alpha1
+kind: ProtocolMapper
+metadata:
+  name: kubectl-hnatekmar-xyz-k8s-roles
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-hnatekmar-xyz
+    # The claim name as seen by the API server, and what --oidc-groups-claim will name.
+    name: k8s-roles
+    protocol: openid-connect
+    protocolMapper: oidc-usermodel-realm-role-mapper
+    config:
+      claim.name: k8s-roles
+      multivalued: "true"
+      jsonType.label: String
+      # ID token is what kubectl presents; the access token is included for completeness.
+      id.token.claim: "true"
+      access.token.claim: "true"
+      userinfo.token.claim: "true"
