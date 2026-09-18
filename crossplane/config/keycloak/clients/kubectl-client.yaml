@@ -1,0 +1,104 @@
+---
+# Keycloak OIDC Client for kubectl — kubeconfig distribution
+#
+# WHY THIS EXISTS
+# A kubeconfig that authenticates with OIDC contains NO SECRET: just the cluster's endpoint, its public
+# CA, and an `exec` block that runs `kubelogin`. That makes it safe to publish or commit, which is the
+# point — cluster access should come from identity (groups, MFA, revocation) rather than from a
+# certificate carved out of the cluster's secrets.
+#
+# The client itself is PUBLIC: kubelogin is a native CLI, so there is no client secret to leak or rotate,
+# and PKCE (S256) protects the authorization-code exchange.
+#
+# DELIBERATE DEVIATION FROM docs/crossplane/keycloak.md
+# That document advises `directAccessGrantsEnabled: true` "for CLI support". That is the resource-owner
+# password grant, which would let a token be minted directly from a password and BYPASS the GitHub
+# identity providers and MFA. kubelogin uses authorization-code + PKCE, so this is left disabled
+# on purpose. If a future CLI genuinely needs the password grant, prefer the device-code flow instead:
+# the provider exposes `oauth2DeviceAuthorizationGrantEnabled` on this resource.
+#
+# NOTE: this is the first PUBLIC client in this repository — every other one is CONFIDENTIAL. There is
+# no precedent to copy, so please review the field set against the provider CRD.
+#
+# CONSUMERS
+# The clusters' API servers set `--oidc-issuer-url=https://sso.hnatekmar.xyz/realms/master` and
+# `--oidc-client-id=kubectl-hnatekmar-xyz`, then map the token's `groups` claim to Kubernetes RBAC.
+# One client serves every cluster: authorization is per-cluster via RBAC, not via the client.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: kubectl-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: PUBLIC
+    realmId: master
+    clientId: kubectl-hnatekmar-xyz
+    enabled: true
+    standardFlowEnabled: true
+    # PKCE for a public client — the authorization-code flow must not be usable without it.
+    pkceCodeChallengeMethod: S256
+    # Password grant disabled: it would sidestep the IdPs and MFA. See the header.
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
+    # Required for the `groups` claim to reach the token, which is what drives Kubernetes RBAC.
+    fullScopeAllowed: true
+    baseUrl: /
+    rootUrl: /
+    webOrigins:
+      - http://localhost:8000
+      - http://localhost:18000
+    # kubelogin's local callback ports. Keycloak matches redirect URIs exactly, so both are listed:
+    # 8000 is kubelogin's default, 18000 its fallback when the first is occupied.
+    validRedirectUris:
+      - http://localhost:8000
+      - http://localhost:18000
+    validPostLogoutRedirectUris:
+      - http://localhost:8000
+      - http://localhost:18000
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: kubectl-hnatekmar-xyz-default-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-hnatekmar-xyz
+    defaultScopes:
+      - acr
+      - email
+      - profile
+      - roles
+      - web-origins
+      - microprofile-jwt
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientOptionalScopes
+metadata:
+  name: kubectl-hnatekmar-xyz-optional-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-hnatekmar-xyz
+    optionalScopes:
+      - offline_access
