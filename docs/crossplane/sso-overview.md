@@ -57,6 +57,40 @@ Both providers sync GitHub username and email into the Keycloak user profile.
   nothing to sync into a namespace and no `writeConnectionSecretToRef` on the resource.
 - Client secrets are written to connection secrets and synced into the service namespace via ExternalSecrets (see `argocd/argocd-external-secret.yaml`, `argocd/argocd-bootstrap-external-secret.yaml`).
 
+## Kubernetes Cluster Access
+
+Cluster access is scoped by how much the cluster matters. Every cluster belongs to **one class** and
+binds **only that class's groups**, so membership of the other class grants nothing there:
+
+| Class | Clusters | Groups | ClusterRole |
+|-------|----------|--------|-------------|
+| `infra` | bootstrap, devops/prod — clusters that must keep working | `k8s-infra-viewer` / `k8s-infra-admin` | `view` / `cluster-admin` |
+| `dev` | sandbox — free to break | `k8s-dev-viewer` / `k8s-dev-admin` | `view` / `cluster-admin` |
+
+The split is deliberate: the group that lets you break a sandbox freely (`k8s-dev-admin`) is **not**
+the group that touches the cluster everything else depends on (`k8s-infra-admin`). Infra admin is a
+narrow, intentional membership.
+
+Both tiers use built-in ClusterRoles — `view` and `cluster-admin` — so there are no custom roles to
+audit or keep in sync.
+
+Client: `kubectl-hnatekmar-xyz` (PUBLIC, PKCE). Each cluster's API server sets:
+
+```
+oidc-issuer-url: https://sso.hnatekmar.xyz/realms/master
+oidc-client-id: kubectl-hnatekmar-xyz
+oidc-username-claim: email
+oidc-groups-claim: groups
+oidc-groups-prefix: sso:
+```
+
+The `sso:` prefix is what appears in the ClusterRoleBinding subjects. It is not cosmetic: without a
+prefix, a Keycloak group named `system:masters` would silently grant cluster-admin.
+
+Manifests: `crossplane/config/keycloak/groups/k8s-*.yaml`. Unlike the OpenBao/ArgoCD groups, these
+need no realm role or group-to-role mapping — nothing consumes a realm role for Kubernetes access,
+only the `groups` claim.
+
 ## OpenBao Access Levels
 
 OIDC auth backend at `auth/oidc`, discovery `https://sso.hnatekmar.xyz/realms/master`. Each role binds a Keycloak group and assigns policies.

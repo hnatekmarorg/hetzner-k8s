@@ -1,0 +1,33 @@
+---
+# Keycloak group: k8s-infra-viewer
+#
+# Kubernetes access for **infra** clusters, viewer tier.
+#
+# These groups exist so cluster access is scoped by how much the cluster matters:
+#   infra = must keep working     -> infra-admin is a deliberate, narrow identity
+#   dev   = sandbox, may break    -> infra-admin is the everyday one
+#
+# The split is the point: the group that lets you break a sandbox freely is NOT the group that
+# touches the cluster everything else depends on. A cluster binds only its own class's pair, so
+# membership of the other class grants nothing there.
+#
+# Read-only on infrastructure clusters (built-in ClusterRole: view).
+#
+# Kubernetes reads membership from the token's `groups` claim (the cluster sets
+# oidc-groups-claim=groups plus oidc-groups-prefix=sso:, hence the `sso:` prefix in the
+# ClusterRoleBinding subjects). No realm role or mapping is needed — unlike the OpenBao/ArgoCD
+# groups, nothing consumes a realm role here.
+apiVersion: group.keycloak.crossplane.io/v1alpha1
+kind: Group
+metadata:
+  name: k8s-infra-viewer
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    name: k8s-infra-viewer
+    realmId: master
