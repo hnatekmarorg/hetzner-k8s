@@ -1,0 +1,47 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendRole
+metadata:
+  name: hnatekmarorg-ssh-infra-admin-role
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: "admin"
+    backend: hnatekmarorg-ssh-infra
+    keyType: "ca"
+    # default_user is the PRINCIPAL, not the unix login: with no principal requested the
+    # certificate is still issued as `admin`, so a principal-less sign cannot produce an
+    # ungated root certificate that skips AuthorizedPrincipalsFile on the target host.
+    defaultUser: "admin"
+    # The class lives in the CA; the principal carries the TIER. Infra hosts accept principal
+    # `admin` only, so a future viewer role is refused there by sshd's AuthorizedPrincipalsFile
+    # without touching key material. The login user is still root (ssh root@host) — that is
+    # the AuthorizedPrincipalsFile's `%u`, not this field.
+    allowedUsers: "admin"
+    # cidrList is deliberately NOT set: the OpenBao API documents cidr_list as
+    # "Not applicable for CA type" (it belongs to OTP-type roles), so the value the
+    # prototype carried under it did nothing. The estate's nets are pinned where the CA
+    # role can actually enforce them — as the certificate's `source-address` critical
+    # option, which sshd checks on every login.
+    #
+    # Residual, verified against a dev server: a caller holding sign rights may override
+    # critical_options, so the pin bounds a leaked *certificate*, not a leaked sign token.
+    # The class gate itself (which CA signed it) cannot be overridden this way.
+    defaultCriticalOptions:
+      source-address: "172.16.0.0/20,172.16.16.0/20,172.16.32.0/19,172.16.64.0/20,172.16.96.0/20,172.16.100.0/24,192.168.88.0/24,88.198.65.246/32"
+    ttl: "24h"
+    maxTtl: "168h"
+    allowHostCertificates: false
+    allowUserCertificates: true
+    # Lets enroll.sh stamp the certificate with key_id "<class>:<hostname>", which is what
+    # `ssh-keygen -L` and the sshd log then show. It is a label, not an authorization input:
+    # what authorizes is the signing CA plus the principal.
+    allowUserKeyIds: true
+    allowedExtensions: permit-pty,permit-port-forwarding,permit-X11-forwarding
+    defaultExtensions:
+      permit-port-forwarding: ""
+      permit-pty: ""
+      permit-X11-forwarding: ""
+    notBeforeDuration: "30s"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

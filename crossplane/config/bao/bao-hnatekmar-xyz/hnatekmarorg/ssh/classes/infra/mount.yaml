@@ -1,0 +1,15 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: hnatekmarorg-ssh-infra
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    # Class = CA. The infra class gets its own signing key so a dev-class certificate is
+    # not merely "not bound here" but cryptographically unusable on these hosts.
+    path: hnatekmarorg-ssh-infra
+    type: ssh
+    description: "Infra-class SSH CA (servers that must keep working) managed by Crossplane"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

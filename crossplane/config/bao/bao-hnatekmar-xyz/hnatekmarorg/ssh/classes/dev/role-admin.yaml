@@ -1,0 +1,34 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendRole
+metadata:
+  name: hnatekmarorg-ssh-dev-admin-role
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: "admin"
+    backend: hnatekmarorg-ssh-dev
+    keyType: "ca"
+    # Same tier contract as the infra role: default_user is the principal, so the
+    # certificate shape does not depend on how it was requested.
+    defaultUser: "admin"
+    # Same tier contract as the infra role; the class is what differs, and it differs
+    # in the CA rather than in this field.
+    allowedUsers: "admin"
+    # See the infra role: cidr_list is not applicable to CA-type roles, so the estate's
+    # nets are pinned as the certificate's `source-address` critical option instead.
+    defaultCriticalOptions:
+      source-address: "172.16.0.0/20,172.16.16.0/20,172.16.32.0/19,172.16.64.0/20,172.16.96.0/20,172.16.100.0/24,192.168.88.0/24,88.198.65.246/32"
+    ttl: "24h"
+    maxTtl: "168h"
+    allowHostCertificates: false
+    allowUserCertificates: true
+    allowUserKeyIds: true
+    allowedExtensions: permit-pty,permit-port-forwarding,permit-X11-forwarding
+    defaultExtensions:
+      permit-port-forwarding: ""
+      permit-pty: ""
+      permit-X11-forwarding: ""
+    notBeforeDuration: "30s"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
