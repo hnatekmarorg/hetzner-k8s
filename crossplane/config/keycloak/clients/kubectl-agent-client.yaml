@@ -1,0 +1,183 @@
+---
+# Keycloak OIDC client for a MACHINE kubectl identity — client credentials, no human in the loop.
+#
+# WHY NOT REUSE `kubectl-hnatekmar-xyz`. That client is PUBLIC and authorization-code/PKCE, which is
+# right for a person at a keyboard: no client secret to leak, MFA and the GitHub identity providers
+# still apply, and the kubeconfig stays credential-free. A machine cannot open a browser, and the
+# alternative — handing a robot a human's password — is worse than it looks: one credential that
+# cannot be scoped to a flow, and every action it takes is attributed to that human in the audit log.
+#
+# So this client exists to BE a service account: CONFIDENTIAL (it holds a secret), service accounts
+# enabled, and both interactive flows off. The identity it presents to the API server is
+# `sso:hermes-agent@hnatekmar.xyz` (the email mapper below), distinct from every human's.
+#
+# WHAT IT NEEDS FROM KEYCLOAK, and why each piece exists:
+#
+#   1. The realm roles k8s-dev-admin and k8s-infra-admin (ClientServiceAccountRealmRole, below).
+#      Cluster RBAC binds realm roles — cluster-base renders `sso:k8s-<class>-{viewer,admin}` — and a
+#      cluster binds only its own class's pair, so holding both grants nothing extra on either.
+#
+#   2. An AUDIENCE mapper. The clusters declare `audiences = [oidc_client_id]`
+#      (terraform/modules/talos-cluster), i.e. the token's `aud` must contain `kubectl-hnatekmar-xyz`.
+#      A client-credentials token is issued with `aud: account`, so without this the API server
+#      answers a bare 401 and the failure looks like a bad secret. The audience is the HUMAN client's
+#      id because that is the single value every cluster is configured with; giving this client its
+#      own audience would mean re-applying the Talos config estate-wide for no gain.
+#
+#   3. An `email` claim, via a HARDCODED mapper rather than the `email` scope. The clusters map the
+#      Kubernetes username from `email` (oidc_username_claim), and a service account has no email:
+#      the claim would be absent and authentication would fail with "oidc: parse username claims".
+#      The scope is also the wrong tool — it reads a user property a service account does not have,
+#      and it can emit `email_verified: false`, which Kubernetes rejects outright ("oidc: email not
+#      verified"). A fixed value is the honest description of a fixed machine identity.
+#
+#   4. The `microprofile-jwt` default scope, which is what puts realm roles into the top-level
+#      `groups` claim the API server reads (the estate's convention — see roles/k8s-*.yaml).
+#
+# NO ClientOptionalScopes: `offline_access` would buy nothing, because the client-credentials grant
+# never returns a refresh token — the caller mints a short-lived one when it needs one.
+#
+# The connection secret written below holds the client id and secret (`attribute.client_id`,
+# `attribute.client_secret`, same shape as the argocd clients). Nothing else is distributed.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: kubectl-agent-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  writeConnectionSecretToRef:
+    name: kubectl-agent-hnatekmar-xyz
+    namespace: crossplane-system
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmId: master
+    clientId: kubectl-agent-hnatekmar-xyz
+    enabled: true
+    # client_credentials is the ONLY grant this client may use: no browser for authorization-code, no
+    # password to hand over, no device code for a human to approve.
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: true
+    # Required for the `groups` claim to reach the token — exactly as on the kubectl client.
+    fullScopeAllowed: true
+    # No webOrigins and no validRedirectUris: there is no redirect to come back to, and listing them
+    # would describe flows this client is deliberately unable to run.
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientDefaultScopes
+metadata:
+  name: kubectl-agent-hnatekmar-xyz-default-scopes
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-agent-hnatekmar-xyz
+    defaultScopes:
+      - acr
+      - profile
+      - roles
+      - web-origins
+      # The claim the API server maps to Kubernetes groups (realm roles, top-level `groups`).
+      - microprofile-jwt
+      # `email` is deliberately ABSENT here: the claim comes from the hardcoded mapper below, so that
+      # no user-property mapper (and no `email_verified`) is involved.
+---
+# The cluster-access roles, granted to this client's service account. One resource per role: the
+# provider's `role` field is a single role name, and a separate object per grant is what makes a
+# removed grant show up as a deletion in ArgoCD rather than as a silent list edit.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientServiceAccountRealmRole
+metadata:
+  name: kubectl-agent-k8s-dev-admin
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    role: k8s-dev-admin
+    serviceAccountUserClientIdRef:
+      name: kubectl-agent-hnatekmar-xyz
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientServiceAccountRealmRole
+metadata:
+  name: kubectl-agent-k8s-infra-admin
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    role: k8s-infra-admin
+    serviceAccountUserClientIdRef:
+      name: kubectl-agent-hnatekmar-xyz
+---
+# The audience the clusters validate. See point 2 in the header: without it every request is a 401.
+apiVersion: client.keycloak.crossplane.io/v1alpha1
+kind: ProtocolMapper
+metadata:
+  name: kubectl-agent-audience
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-agent-hnatekmar-xyz
+    name: audience-kubectl
+    protocol: openid-connect
+    protocolMapper: oidc-audience-mapper
+    config:
+      included.custom.audience: kubectl-hnatekmar-xyz
+      access.token.claim: "true"
+      # There is no ID token in the client-credentials grant; saying so explicitly keeps the mapper
+      # honest if this client ever grows a browser flow.
+      id.token.claim: "false"
+---
+# The Kubernetes username claim. See point 3 in the header.
+apiVersion: client.keycloak.crossplane.io/v1alpha1
+kind: ProtocolMapper
+metadata:
+  name: kubectl-agent-email-claim
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-agent-hnatekmar-xyz
+    name: email-claim
+    protocol: openid-connect
+    protocolMapper: oidc-hardcoded-claim-mapper
+    config:
+      claim.name: email
+      claim.value: hermes-agent@hnatekmar.xyz
+      access.token.claim: "true"
+      id.token.claim: "true"
+      jsonType.label: String
