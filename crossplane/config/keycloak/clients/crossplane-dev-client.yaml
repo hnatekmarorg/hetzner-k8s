@@ -1,0 +1,72 @@
+---
+# Keycloak OIDC client for the ON-PREM DEV cluster's Crossplane — the twin of
+# crossplane-prod-client.yaml, which carries the full rationale (why a scoped identity instead of the
+# realm admin, why one per cluster, what `manage-clients` and `view-realm` are for, and how the secret
+# reaches the on-prem vault).
+#
+# Read that file before changing this one: the two are meant to differ ONLY in the cluster they name, so
+# a divergence between them is the mistake to look for first.
+#
+# The one thing worth repeating here, because it is the part that surprises people: this identity can
+# create a client, and it CANNOT grant that client's service account a realm role. That is not an
+# oversight — a realm role like k8s-dev-admin is cluster access, and it is granted in the hub (see
+# kubectl-agent-client.yaml). Keeping those two jobs in different identities is what stops an on-prem
+# compromise from minting cluster access for itself.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: crossplane-dev-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  writeConnectionSecretToRef:
+    name: crossplane-dev-hnatekmar-xyz
+    namespace: crossplane-system
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmId: master
+    clientId: crossplane-dev-hnatekmar-xyz
+    enabled: true
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: true
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientServiceAccountRole
+metadata:
+  name: crossplane-dev-manage-clients
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientId: realm-management
+    role: manage-clients
+    serviceAccountUserClientIdRef:
+      name: crossplane-dev-hnatekmar-xyz
+---
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientServiceAccountRole
+metadata:
+  name: crossplane-dev-view-realm
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientId: realm-management
+    role: view-realm
+    serviceAccountUserClientIdRef:
+      name: crossplane-dev-hnatekmar-xyz
