@@ -227,7 +227,7 @@ and its `dev` twin:
 | Piece | Why |
 |---|---|
 | `serviceAccountsEnabled: true`, `standardFlow`/`directAccessGrants` false | Only `client_credentials` is usable: no browser, no password to borrow. |
-| `ClientServiceAccountRole` with `clientId: realm-management`, `role: manage-clients` | Create/update clients, their protocol mappers and scope assignments. This IS the job, and it composites `view-clients`, so reads come with it. |
+| `ClientServiceAccountRole` with `clientIdRef` → a Client MR for the realm's admin client, `role: manage-clients` | Create/update clients, their protocol mappers and scope assignments. This IS the job, and it composites `view-clients`, so reads come with it. The admin client is `<realm>-realm` in the master realm and `realm-management` anywhere else — see the two traps below. |
 | `ClientServiceAccountRole` with `role: view-realm` | Read-only realm metadata. Not needed to write a client, but the provider reads realm state while reconciling and a 403 there reads like a bad secret rather than a missing grant. |
 | One client **per on-prem cluster** | Revocation is per cluster, and Keycloak's admin events record the acting client, so "which cluster created this?" answers itself. |
 
@@ -256,47 +256,78 @@ ESO from `secret/<cluster>/keycloak-writer`. Because `writeConnectionSecretToRef
 where the provider runs, the client secret lands locally: there is no WAN→LAN push to maintain, and the hub
 needs no route into the LAN.
 
-**The field that bites.** `ClientServiceAccountRole.clientId` is NOT a clientId. The provider's generated
-schema attaches `extractor=common.UUIDExtractor()` to it, because the admin API's role-mapping endpoint takes
-the role-providing client's **internal UUID**:
+**Two traps, both measured — and the second one invalidated the first fix.**
+
+*One: the field carries a UUID, not a name.* `ClientServiceAccountRole.clientId` is NOT a clientId. The
+provider's generated schema attaches `extractor=common.UUIDExtractor()` to it, because the admin API's
+role-mapping endpoint takes the role-providing client's **internal UUID**:
 
 ```
 POST /admin/realms/{realm}/users/{service-account-id}/role-mappings/clients/{client-uuid}
 ```
 
-So the natural-looking `clientId: realm-management` sends a string where a UUID belongs, every other field
+So a bare `clientId: master-realm` puts a string where a UUID belongs, every other field in the object
 resolves, and the grant fails at runtime with
 
 ```
 404 Not Found. Response body: {"error":"Client not found"}
 ```
 
-leaving the managed resource `Ready: False` (measured on all four grants, 2026-09-20 — while the *client*
-objects themselves reconciled fine, which is what makes it look like a permissions problem). Use
-`clientIdRef` against a Client MR for the role-providing client. For a builtin client that MR has to be
-IMPORTED rather than created:
+leaving the managed resource `Ready: False` while the *client* objects themselves reconcile fine — which is
+what makes a URL-shape bug look like a permissions problem. Remedy: `clientIdRef` against a Client MR for the
+role-providing client; the reference resolves that MR's observed `status.atProvider.id`.
 
-```yaml
-spec:
-  deletionPolicy: Orphan
-  managementPolicies: ["Create", "Observe"]   # import once, then observe: never modify or delete it
-  forProvider:
-    realmId: master
-    clientId: realm-management
-    accessType: CONFIDENTIAL   # required by a CEL rule for any MR that may Create/Update
-    import: true
+*Two: the admin client has a different NAME in the master realm.* Keycloak's docs state it plainly: "if you
+are in the master realm, select the one with NAME-realm, where NAME is the name of the realm". So the master
+realm's admin client is **`master-realm`**, and `realm-management` exists only in non-master realms. Naming
+the wrong one fails *differently*, in a way that reads like a permission error rather than a typo:
+
+```
+async create failed: [{0 openid client with name realm-management does not exist  []}]
 ```
 
-`accessType` cannot be omitted: the CRD carries a CEL rule (`!('*' in policy || 'Create' in policy ||
-'Update' in policy) || has(accessType)`) so that any client object which may be written declares its type,
-and the import is a write path. It is also worth getting the VALUE right for that same reason — a wrong
-value is a rewrite of a builtin client, so measure it rather than guess: a secretless `client_credentials`
-attempt answers `unauthorized_client: Public client not allowed to retrieve service account` for a public
-client and `invalid_client: Invalid client or Invalid client credentials` for a confidential one. Run both
-controls (`account`, `admin-cli`) alongside it.
+That message has exactly one source — `GetOpenidClientByClientId` receiving a 200 with an **empty list**.
+Because a client that exists but is wrongly addressed and a client that does not exist at all both produce a
+404 from the admin API, it is worth telling the two traps apart before changing anything. To check which
+client a realm actually has, probe the authorize endpoint and **include a known-nonexistent client as a
+control**:
 
-`import` is the provider's form of the Terraform attribute meant for "clients that Keycloak creates
-automatically during realm creation, such as `account` and `admin-cli`". Dropping `Update`/`Delete` from
-`managementPolicies` is the point, not a detail: this is the realm's admin client, and the only write
-possible is the one-time import. The zero-write alternative, if that import ever looks risky, is
-`crossplane.io/external-name: master/<uuid>` with `managementPolicies: ["Observe"]`.
+| probe | answer |
+|---|---|
+| `client_id=definitely-not-a-real-client` | `Client not found` |
+| `client_id=master-realm` | `403` — real, and refusing a browser flow (it is bearer-only) |
+| `client_id=realm-management` in the master realm | `Client not found` — identical to the made-up name |
+
+The token endpoint is useless for this: an unknown client and a bad secret both answer
+`invalid_client: Invalid client or Invalid client credentials`, so a probe without the nonexistent control
+proves nothing (and once concluded, wrongly, that this client existed).
+
+*The adopted MR, OBSERVED rather than imported:*
+
+```yaml
+metadata:
+  annotations:
+    crossplane.io/external-name: <the client's uuid>   # admin console URL — an identifier, not a secret
+spec:
+  deletionPolicy: Orphan
+  managementPolicies: ["Observe"]      # no Create/Update/Delete: nothing can write to this client
+  forProvider:
+    realmId: master
+    clientId: master-realm
+    accessType: BEARER-ONLY            # declared for the reader; never applied
+```
+
+Terraform's `import` attribute is the obvious adoption route and the wrong one for this client: the
+provider's import branch is `GetOpenidClientByClientId` → `mergo.Merge` → **`UpdateOpenidClient`**, so it
+WRITES the client — and the one attribute we could declare (`accessType`) is unverifiable, because
+`master-realm` is bearer-only and no existence probe distinguishes that from confidential. Observe-only
+removes the question, and it also means the CEL rule requiring `accessType` on any client object that may
+Create or Update (`!('*' in policy || 'Create' in policy || 'Update' in policy) || has(accessType)`) does
+not apply.
+
+The durable version of this is a composition rather than a pinned id: `function-keycloak-builtin-objects`
+enumerates a realm's builtin clients and roles and composes observe-only MRs carrying their UUIDs as
+external names. On Crossplane 1.20 it additionally needs a later pipeline step to stamp
+`metadata.namespace` on what it composes — nothing defaults a composed resource's namespace (measured: a
+cluster-scoped composite, and equally a claim, both fail with "an empty namespace may not be set when a
+resource name is provided"). That is a change worth making deliberately, not inside a fix.

@@ -1,0 +1,58 @@
+---
+# The MASTER realm's admin client, ADOPTED (never created) so the role grants can REFERENCE it.
+#
+# WHY THIS FILE EXISTS — two traps, both measured. The second invalidated the first fix, so keep them
+# apart when reading this:
+#
+# 1. `ClientServiceAccountRole.clientId` is NOT a clientId. The provider's generated schema attaches
+#    `extractor=common.UUIDExtractor()` to it, because the admin API's role-mapping endpoint takes the
+#    role-providing client's INTERNAL UUID:
+#
+#      POST /admin/realms/{realm}/users/{service-account-id}/role-mappings/clients/{client-uuid}
+#
+#    so the natural-looking `clientId: master-realm` puts a string where a UUID belongs. Failure:
+#    `404 Not Found {"error":"Client not found"}`, while every other field in the same object resolves
+#    correctly — which is exactly what makes a URL-shape bug look like a permissions problem. Remedy:
+#    `clientIdRef` to this MR, which resolves its observed `status.atProvider.id`.
+#
+# 2. In the MASTER realm the admin client is `master-realm`, NOT `realm-management`. Keycloak's own docs:
+#    "if you are in the master realm, select the one with NAME-realm, where NAME is the name of the realm".
+#    `realm-management` exists only in non-master realms. Failure when named wrongly:
+#    `openid client with name realm-management does not exist` — the by-clientId lookup returning an empty
+#    list. Both traps produce a 404 from the admin API, so they are worth telling apart before changing
+#    anything; the table in docs/crossplane/keycloak.md has the probe that does.
+#
+# WHY IT IS OBSERVED RATHER THAN IMPORTED. Terraform's `import` attribute is the obvious adoption route and
+# the wrong one for THIS client: the provider's import branch is GetOpenidClientByClientId → mergo.Merge →
+# **UpdateOpenidClient**, so it WRITES the client — and the only attribute we could declare about it
+# (`accessType`) is one we cannot verify, because `master-realm` is bearer-only and a client-existence probe
+# cannot distinguish bearer-only from confidential. Declaring the wrong one would rewrite a flag on the
+# realm's admin client. Observe-only makes that impossible, and it also means the CEL rule requiring
+# `accessType` on writable client objects does not apply here (the field below is declared for the reader,
+# not for the API server).
+#
+# THE UUID IS AN IDENTIFIER, NOT A SECRET — visible in the admin console URL of that client. It is pinned
+# because nothing on this estate can discover it: the provider's credentials live in the hub and this MR is
+# observed, not enumerated. The durable version is a composition that enumerates builtin objects and stamps
+# their external names (function-keycloak-builtin-objects, which on Crossplane 1.20 additionally needs a
+# pipeline step to set `metadata.namespace` on the MRs it composes — see docs/crossplane/keycloak.md).
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: master-realm
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    crossplane.io/external-name: e8bdb6e8-03ec-4d74-8748-b3643e769f5c
+spec:
+  deletionPolicy: Orphan
+  managementPolicies: ["Observe"]
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientId: master-realm
+    # Never applied — Observe-only. Stated because BEARER-ONLY is what this client is (measured: the
+    # authorize endpoint answers 403 rather than "Client not found"), and because that is the fact which
+    # rules out the import route described above.
+    accessType: BEARER-ONLY

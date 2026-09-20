@@ -49,11 +49,16 @@ spec:
   forProvider:
     realmId: master
     # The client that PROVIDES the role — by REFERENCE, never by name: this field carries the client's
-    # INTERNAL UUID, so `clientId: realm-management` puts a string where a UUID belongs and Keycloak
-    # answers 404 "Client not found". realm-management-client.yaml declares the referent (imported, not
-    # created) and the reference resolves to its UUID.
+    # INTERNAL UUID, so a bare name puts a string where a UUID belongs and Keycloak answers 404 "Client not
+    # found". master-realm-client.yaml declares the referent (observed, never written) and the reference
+    # resolves to its UUID.
+    #
+    # NOTE THE NAME. In the MASTER realm the admin client is `<realm>-realm`, i.e. `master-realm`;
+    # `realm-management` exists only in non-master realms, and naming it here fails as an empty by-clientId
+    # lookup ("openid client with name realm-management does not exist"). Both traps are documented in
+    # docs/crossplane/keycloak.md.
     clientIdRef:
-      name: realm-management
+      name: master-realm
     role: manage-clients
     serviceAccountUserClientIdRef:
       name: crossplane-dev-hnatekmar-xyz
@@ -72,11 +77,16 @@ spec:
   forProvider:
     realmId: master
     # The client that PROVIDES the role — by REFERENCE, never by name: this field carries the client's
-    # INTERNAL UUID, so `clientId: realm-management` puts a string where a UUID belongs and Keycloak
-    # answers 404 "Client not found". realm-management-client.yaml declares the referent (imported, not
-    # created) and the reference resolves to its UUID.
+    # INTERNAL UUID, so a bare name puts a string where a UUID belongs and Keycloak answers 404 "Client not
+    # found". master-realm-client.yaml declares the referent (observed, never written) and the reference
+    # resolves to its UUID.
+    #
+    # NOTE THE NAME. In the MASTER realm the admin client is `<realm>-realm`, i.e. `master-realm`;
+    # `realm-management` exists only in non-master realms, and naming it here fails as an empty by-clientId
+    # lookup ("openid client with name realm-management does not exist"). Both traps are documented in
+    # docs/crossplane/keycloak.md.
     clientIdRef:
-      name: realm-management
+      name: master-realm
     role: view-realm
     serviceAccountUserClientIdRef:
       name: crossplane-dev-hnatekmar-xyz
