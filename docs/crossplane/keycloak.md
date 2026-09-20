@@ -255,3 +255,39 @@ That document crosses to the on-prem vault **once** — `devops-cluster`'s
 ESO from `secret/<cluster>/keycloak-writer`. Because `writeConnectionSecretToRef` writes into the cluster
 where the provider runs, the client secret lands locally: there is no WAN→LAN push to maintain, and the hub
 needs no route into the LAN.
+
+**The field that bites.** `ClientServiceAccountRole.clientId` is NOT a clientId. The provider's generated
+schema attaches `extractor=common.UUIDExtractor()` to it, because the admin API's role-mapping endpoint takes
+the role-providing client's **internal UUID**:
+
+```
+POST /admin/realms/{realm}/users/{service-account-id}/role-mappings/clients/{client-uuid}
+```
+
+So the natural-looking `clientId: realm-management` sends a string where a UUID belongs, every other field
+resolves, and the grant fails at runtime with
+
+```
+404 Not Found. Response body: {"error":"Client not found"}
+```
+
+leaving the managed resource `Ready: False` (measured on all four grants, 2026-09-20 — while the *client*
+objects themselves reconciled fine, which is what makes it look like a permissions problem). Use
+`clientIdRef` against a Client MR for the role-providing client. For a builtin client that MR has to be
+IMPORTED rather than created:
+
+```yaml
+spec:
+  deletionPolicy: Orphan
+  managementPolicies: ["Create", "Observe"]   # import once, then observe: never modify or delete it
+  forProvider:
+    realmId: master
+    clientId: realm-management
+    import: true
+```
+
+`import` is the provider's form of the Terraform attribute meant for "clients that Keycloak creates
+automatically during realm creation, such as `account` and `admin-cli`". Dropping `Update`/`Delete` from
+`managementPolicies` is the point, not a detail: this is the realm's admin client, and the only write
+possible is the one-time import. The zero-write alternative, if that import ever looks risky, is
+`crossplane.io/external-name: master/<uuid>` with `managementPolicies: ["Observe"]`.

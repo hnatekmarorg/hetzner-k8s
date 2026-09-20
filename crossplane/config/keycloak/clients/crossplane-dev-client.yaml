@@ -48,7 +48,12 @@ spec:
     name: sso-hnatekmar-xyz
   forProvider:
     realmId: master
-    clientId: realm-management
+    # The client that PROVIDES the role — by REFERENCE, never by name: this field carries the client's
+    # INTERNAL UUID, so `clientId: realm-management` puts a string where a UUID belongs and Keycloak
+    # answers 404 "Client not found". realm-management-client.yaml declares the referent (imported, not
+    # created) and the reference resolves to its UUID.
+    clientIdRef:
+      name: realm-management
     role: manage-clients
     serviceAccountUserClientIdRef:
       name: crossplane-dev-hnatekmar-xyz
@@ -66,7 +71,12 @@ spec:
     name: sso-hnatekmar-xyz
   forProvider:
     realmId: master
-    clientId: realm-management
+    # The client that PROVIDES the role — by REFERENCE, never by name: this field carries the client's
+    # INTERNAL UUID, so `clientId: realm-management` puts a string where a UUID belongs and Keycloak
+    # answers 404 "Client not found". realm-management-client.yaml declares the referent (imported, not
+    # created) and the reference resolves to its UUID.
+    clientIdRef:
+      name: realm-management
     role: view-realm
     serviceAccountUserClientIdRef:
       name: crossplane-dev-hnatekmar-xyz
