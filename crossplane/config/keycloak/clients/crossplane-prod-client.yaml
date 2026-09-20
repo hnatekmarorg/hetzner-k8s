@@ -1,0 +1,113 @@
+---
+# Keycloak OIDC client for the ON-PREM PROD cluster's Crossplane — the identity that creates the clients
+# prod's services consume.
+#
+# WHY ITS OWN IDENTITY, RATHER THAN THE REALM ADMIN
+# This repository manages the realm with `admin-cli` + the master admin's password
+# (crossplane/config/providers/sso-hnatekmar-xyz.yaml). Copying THAT to every on-prem cluster hands each of
+# them the entire realm — users, groups, identity providers, and the role catalog every cluster's API
+# server binds. What an on-prem cluster actually needs is far narrower: create and maintain the OIDC
+# clients for its own services, and nothing else. So it gets an identity scoped to exactly that.
+#
+# WHY ONE PER CLUSTER RATHER THAN ONE SHARED
+#   * revocation  — a cluster's automation can be cut off without stranding the other cluster's;
+#   * attribution — Keycloak's admin events record the acting client, so "which cluster created this
+#                   client?" answers itself. With one shared identity every cluster looks identical;
+#   * the vault   — the credential stays on a per-cluster path (`secret/<cluster>/keycloak-writer`), which
+#                   the cluster's read policy already covers, so nothing shared has to be carved out.
+# `crossplane-dev-hnatekmar-xyz` is the twin of this file for the dev cluster.
+#
+# WHAT IT MAY DO
+#   manage-clients  create/update/delete clients, their protocol mappers and scope assignments. This is the
+#                   whole job, and it composites `view-clients`, so reads come with it.
+#   view-realm      read-only realm metadata (realm settings, the NAMES of roles and groups). Not needed to
+#                   write a client, but the provider reads realm-level state while reconciling and a 403
+#                   there arrives as a failing managed resource that looks like a bad secret rather than a
+#                   missing grant.
+#
+# WHAT IT MAY NOT DO, deliberately: users, groups, identity providers, realm settings, and the granting of
+# realm roles to a service account (that needs manage-users). The consequence to know about: a migrated
+# service that must authenticate TO a Kubernetes API server needs a realm role like k8s-prod-admin on its
+# service account, and that grant belongs HERE, in the hub — the way kubectl-agent-client.yaml does it —
+# not by widening this identity.
+#
+# THE SECRET, AND HOW IT REACHES THE CLUSTER
+# `writeConnectionSecretToRef` writes `attribute.client_id` / `attribute.client_secret` into this cluster's
+# crossplane-system. From there it crosses to the on-prem vault ONCE, by hand, and never again:
+#
+#   # devops-cluster repo
+#   KEYCLOAK_WRITER_CLIENT_SECRET=... ./scripts/seed-vault.sh keycloak-writer prod
+#
+# After that the on-prem cluster reads its own vault path with ESO. Nothing polls the hub, and the hub
+# never needs a route into the LAN.
+#
+# ABSENT ON PURPOSE: no validRedirectUris and no webOrigins (there is no browser in this flow), and no
+# ClientDefaultScopes/ClientOptionalScopes — the token it mints is only ever presented to Keycloak's own
+# admin API, so its scope set describes nothing a caller could usefully ask for.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: crossplane-prod-hnatekmar-xyz
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  writeConnectionSecretToRef:
+    name: crossplane-prod-hnatekmar-xyz
+    namespace: crossplane-system
+  forProvider:
+    accessType: CONFIDENTIAL
+    realmId: master
+    clientId: crossplane-prod-hnatekmar-xyz
+    enabled: true
+    # client_credentials is the ONLY grant this identity may use: no browser for authorization-code, no
+    # password to hand over, no device code for a person to approve.
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: true
+---
+# `manage-clients` — a CLIENT role of the `realm-management` client, which is why this is a
+# ClientServiceAccountRole and not a ClientServiceAccountRealmRole (the realm-role kind grants things like
+# k8s-prod-admin, and is what kubectl-agent-client.yaml uses). Both kinds name the service account the same
+# way: the client that CONSUMES the role.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientServiceAccountRole
+metadata:
+  name: crossplane-prod-manage-clients
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    # The client that PROVIDES the role.
+    clientId: realm-management
+    role: manage-clients
+    serviceAccountUserClientIdRef:
+      name: crossplane-prod-hnatekmar-xyz
+---
+# Read-only realm metadata — see "WHAT IT MAY DO". One resource per grant on purpose: a revoked grant then
+# shows up as a deletion rather than as a quiet list edit.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: ClientServiceAccountRole
+metadata:
+  name: crossplane-prod-view-realm
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientId: realm-management
+    role: view-realm
+    serviceAccountUserClientIdRef:
+      name: crossplane-prod-hnatekmar-xyz

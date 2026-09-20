@@ -217,3 +217,41 @@ curl -s -X POST https://sso.hnatekmar.xyz/realms/master/protocol/openid-connect/
   -d grant_type=client_credentials \
   -d client_id=... -d client_secret=... | jq -r .access_token
 ```
+
+### Management clients (a cluster maintaining its own realm objects)
+
+A machine client can also be an ADMINISTRATOR of a slice of the realm. That is how the on-prem clusters
+create the clients their services consume — see `crossplane/config/keycloak/clients/crossplane-prod-client.yaml`
+and its `dev` twin:
+
+| Piece | Why |
+|---|---|
+| `serviceAccountsEnabled: true`, `standardFlow`/`directAccessGrants` false | Only `client_credentials` is usable: no browser, no password to borrow. |
+| `ClientServiceAccountRole` with `clientId: realm-management`, `role: manage-clients` | Create/update clients, their protocol mappers and scope assignments. This IS the job, and it composites `view-clients`, so reads come with it. |
+| `ClientServiceAccountRole` with `role: view-realm` | Read-only realm metadata. Not needed to write a client, but the provider reads realm state while reconciling and a 403 there reads like a bad secret rather than a missing grant. |
+| One client **per on-prem cluster** | Revocation is per cluster, and Keycloak's admin events record the acting client, so "which cluster created this?" answers itself. |
+
+What such a client deliberately cannot do: manage users, groups, identity providers, realm settings, or
+grant a service account a realm role (that needs `manage-users`). A service that must authenticate to a
+Kubernetes API server gets its realm roles granted here, in the hub, by a hub-owned manifest — the way
+`kubectl-agent-client.yaml` does it. Keeping those two jobs in different identities is what stops an
+on-prem compromise from minting cluster access for itself.
+
+Its credential is the same document shape as any other provider config. Only `client_id` and `url` are
+required; the presence of `client_secret` with `username`/`password` absent is what selects the
+client-credentials grant (provider-keycloak v2.17.0, `internal/clients/keycloak.go`):
+
+```json
+{
+  "url": "https://sso.hnatekmar.xyz",
+  "client_id": "crossplane-prod-hnatekmar-xyz",
+  "client_secret": "...",
+  "realm": "master"
+}
+```
+
+That document crosses to the on-prem vault **once** — `devops-cluster`'s
+`./scripts/seed-vault.sh keycloak-writer <cluster>` — and the on-prem cluster's own Crossplane reads it with
+ESO from `secret/<cluster>/keycloak-writer`. Because `writeConnectionSecretToRef` writes into the cluster
+where the provider runs, the client secret lands locally: there is no WAN→LAN push to maintain, and the hub
+needs no route into the LAN.
