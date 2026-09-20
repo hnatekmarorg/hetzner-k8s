@@ -31,8 +31,14 @@
 #      and it can emit `email_verified: false`, which Kubernetes rejects outright ("oidc: email not
 #      verified"). A fixed value is the honest description of a fixed machine identity.
 #
-#   4. The `microprofile-jwt` default scope, which is what puts realm roles into the top-level
-#      `groups` claim the API server reads (the estate's convention — see roles/k8s-*.yaml).
+#   4. A `groups` claim, named EXPLICITLY for this client (oidc-usermodel-realm-role-mapper, below).
+#      `microprofile-jwt` — the estate's convention for human clients — carries realm roles into
+#      `groups` for a human token, but a service account gets NO `groups` claim from it at all.
+#      Measured on this client once it was in place: the token carried the roles only under
+#      `realm_access.roles`, the API server therefore saw `[system:authenticated]`, and every request
+#      was Forbidden ("cannot list resource \"nodes\"") while authentication itself succeeded.
+#      The clusters read `groups`; this file names its source, rather than depending on a scope whose
+#      behaviour changes with the grant type.
 #
 # NO ClientOptionalScopes: `offline_access` would buy nothing, because the client-credentials grant
 # never returns a refresh token — the caller mints a short-lived one when it needs one.
@@ -88,10 +94,9 @@ spec:
       - profile
       - roles
       - web-origins
-      # The claim the API server maps to Kubernetes groups (realm roles, top-level `groups`).
-      - microprofile-jwt
-      # `email` is deliberately ABSENT here: the claim comes from the hardcoded mapper below, so that
-      # no user-property mapper (and no `email_verified`) is involved.
+      # NOT `microprofile-jwt`, and not `email` — both would be second, differently-behaving
+      # producers of a claim this client names itself: `groups` (mapper below) and `email` (mapper
+      # below). One producer per claim is what makes the token predictable from this file alone.
 ---
 # The cluster-access roles, granted to this client's service account. One resource per role: the
 # provider's `role` field is a single role name, and a separate object per grant is what makes a
@@ -181,3 +186,31 @@ spec:
       access.token.claim: "true"
       id.token.claim: "true"
       jsonType.label: String
+---
+# The claim RBAC actually binds. See point 4 in the header: `microprofile-jwt` does not produce this
+# for a service account, so the client names it. See the file header for the measurement.
+apiVersion: client.keycloak.crossplane.io/v1alpha1
+kind: ProtocolMapper
+metadata:
+  name: kubectl-agent-groups-claim
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientIdRef:
+      name: kubectl-agent-hnatekmar-xyz
+    name: groups-claim
+    protocol: openid-connect
+    protocolMapper: oidc-usermodel-realm-role-mapper
+    config:
+      claim.name: groups
+      # An array, because the API server maps groups from a list, and RBAC matches each entry.
+      multivalued: "true"
+      jsonType.label: String
+      access.token.claim: "true"
+      id.token.claim: "true"

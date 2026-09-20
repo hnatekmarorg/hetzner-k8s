@@ -197,14 +197,20 @@ obvious:
 | A `ClientServiceAccountRealmRole` per cluster-access role | RBAC binds realm roles, and a service account holds none by default. |
 | An `oidc-audience-mapper` carrying the cluster's client id | Clusters validate `audiences = [oidc_client_id]`; a client-credentials token is issued with `aud: account` and is rejected with a bare 401. |
 | An `oidc-hardcoded-claim-mapper` for `email` | The Kubernetes username is mapped from `email` and a service account has no email, so the claim would simply be absent. Do **not** reach for the `email` scope here: it can also emit `email_verified: false`, which the API server rejects (`oidc: email not verified`). |
-| `microprofile-jwt` in the default scopes | It is what puts realm roles into the top-level `groups` claim the API server reads. |
+| An `oidc-usermodel-realm-role-mapper` with `claim.name: groups` | This is the claim RBAC actually binds, and `microprofile-jwt` — enough for a human client — produces **no** `groups` claim at all for a service account. Measured: the roles arrive only under `realm_access.roles`, so the API server sees `[system:authenticated]` and forbids everything while authentication itself succeeds. |
 
-`offline_access` buys nothing for such a client — `client_credentials` never returns a refresh
-token — so no `ClientOptionalScopes` resource is needed. Neither is `webOrigins` nor
-`validRedirectUris`: there is no redirect to come back to.
+Deliberately absent, for the same reason each row above exists:
+
+- **`microprofile-jwt` and the `email` scope.** Each would be a second, differently-behaving
+  producer of a claim this client already names explicitly. One producer per claim is what makes the
+  token predictable from the manifest alone.
+- **`offline_access`** (and therefore any `ClientOptionalScopes`): `client_credentials` never returns
+  a refresh token.
+- **`webOrigins` and `validRedirectUris`**: there is no redirect to come back to.
 
 The client's connection secret (`attribute.client_id`, `attribute.client_secret`) lands in the
-namespace named by `writeConnectionSecretToRef`. The caller mints a short-lived token per use:
+namespace named by `writeConnectionSecretToRef`. The caller mints a short-lived token per use —
+the realm issues this identity a 60s access token, so caching one buys nothing:
 
 ```bash
 curl -s -X POST https://sso.hnatekmar.xyz/realms/master/protocol/openid-connect/token \
