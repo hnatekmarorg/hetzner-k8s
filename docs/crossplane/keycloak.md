@@ -179,3 +179,35 @@ spec:
 
 - **`claim "email" not found in token`**: The client is missing the `email` default scope. Add `email` to the `ClientDefaultScopes` resource.
 - **Groups not in token**: Ensure `microprofile-jwt` is included in default scopes, or create a custom protocol mapper for groups.
+
+### Machine clients (client credentials)
+
+A client no human drives — an agent, a controller, a scheduled job — cannot run the
+authorization-code flow, and it should not be given a password to borrow. Declare it as a service
+account instead: `CONFIDENTIAL`, `serviceAccountsEnabled: true`, and both `standardFlowEnabled` and
+`directAccessGrantsEnabled` false, so `client_credentials` is the only grant it can use.
+
+**Example**: `crossplane/config/keycloak/clients/kubectl-agent-client.yaml`
+
+Four things are needed before such a client can reach a Kubernetes API server, and none of them are
+obvious:
+
+| Piece | Why |
+|---|---|
+| A `ClientServiceAccountRealmRole` per cluster-access role | RBAC binds realm roles, and a service account holds none by default. |
+| An `oidc-audience-mapper` carrying the cluster's client id | Clusters validate `audiences = [oidc_client_id]`; a client-credentials token is issued with `aud: account` and is rejected with a bare 401. |
+| An `oidc-hardcoded-claim-mapper` for `email` | The Kubernetes username is mapped from `email` and a service account has no email, so the claim would simply be absent. Do **not** reach for the `email` scope here: it can also emit `email_verified: false`, which the API server rejects (`oidc: email not verified`). |
+| `microprofile-jwt` in the default scopes | It is what puts realm roles into the top-level `groups` claim the API server reads. |
+
+`offline_access` buys nothing for such a client — `client_credentials` never returns a refresh
+token — so no `ClientOptionalScopes` resource is needed. Neither is `webOrigins` nor
+`validRedirectUris`: there is no redirect to come back to.
+
+The client's connection secret (`attribute.client_id`, `attribute.client_secret`) lands in the
+namespace named by `writeConnectionSecretToRef`. The caller mints a short-lived token per use:
+
+```bash
+curl -s -X POST https://sso.hnatekmar.xyz/realms/master/protocol/openid-connect/token \
+  -d grant_type=client_credentials \
+  -d client_id=... -d client_secret=... | jq -r .access_token
+```
