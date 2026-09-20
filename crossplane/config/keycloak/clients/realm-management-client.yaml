@@ -48,4 +48,17 @@ spec:
   forProvider:
     realmId: master
     clientId: realm-management
+    # REQUIRED BY A CEL RULE, not by the schema: the CRD declares
+    #   !('*' in policy || 'Create' in policy || 'Update' in policy) || has(accessType)
+    # so any MR that may Create or Update must state it — which this one must, to do the import. Omitting it
+    # is rejected at admission: "spec: Invalid value: spec.forProvider.accessType is a required parameter".
+    #
+    # The VALUE was measured against the realm rather than taken from documentation, because the one-time
+    # import-apply would otherwise be a write to the realm's admin client. With PUBLIC clients as controls —
+    # `account` and `admin-cli` both answer a secretless client_credentials attempt with
+    # "unauthorized_client: Public client not allowed to retrieve service account" — `realm-management`
+    # answers "invalid_client: Invalid client or Invalid client credentials", which is the confidential path
+    # (client authentication required). A bearer-only client does not answer that way, so CONFIDENTIAL is
+    # the value that matches reality.
+    accessType: CONFIDENTIAL
     import: true
