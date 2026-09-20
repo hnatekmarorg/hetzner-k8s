@@ -283,8 +283,17 @@ spec:
   forProvider:
     realmId: master
     clientId: realm-management
+    accessType: CONFIDENTIAL   # required by a CEL rule for any MR that may Create/Update
     import: true
 ```
+
+`accessType` cannot be omitted: the CRD carries a CEL rule (`!('*' in policy || 'Create' in policy ||
+'Update' in policy) || has(accessType)`) so that any client object which may be written declares its type,
+and the import is a write path. It is also worth getting the VALUE right for that same reason — a wrong
+value is a rewrite of a builtin client, so measure it rather than guess: a secretless `client_credentials`
+attempt answers `unauthorized_client: Public client not allowed to retrieve service account` for a public
+client and `invalid_client: Invalid client or Invalid client credentials` for a confidential one. Run both
+controls (`account`, `admin-cli`) alongside it.
 
 `import` is the provider's form of the Terraform attribute meant for "clients that Keycloak creates
 automatically during realm creation, such as `account` and `admin-cli`". Dropping `Update`/`Delete` from
