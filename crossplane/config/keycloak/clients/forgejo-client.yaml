@@ -1,0 +1,42 @@
+# Forgejo's OIDC client — moved here from devops-cluster when the forge left the cluster
+# (LXC 149 on balteus, `forgejo.srv.hnatekmar.dev`, 2026-10-12). The old declaration's rationale was
+# secret delivery into the *consuming cluster*; that consumer no longer exists (the forge's login
+# source holds its secret in its own database), and an estate client must not be owned by a cluster
+# that gets rebuilt — the old one carried `deletionPolicy: Delete` in a disposable cluster.
+#
+# ADOPTED, not created: the client predates this file. `crossplane.io/external-name` pins the
+# existing Keycloak client by UUID, so the provider observes and adopts it — a fresh client would
+# mean a fresh secret, and the forge's login source would stop matching. The id keeps its `-prod`
+# suffix because the forge's auth source names it.
+apiVersion: openidclient.keycloak.crossplane.io/v1alpha1
+kind: Client
+metadata:
+  name: forgejo-client
+  namespace: crossplane-system
+  annotations:
+    crossplane.io/external-name: 4eaaad5d-712b-49f9-881a-f9d34e052eed
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  deletionPolicy: Delete
+  writeConnectionSecretToRef:
+    name: forgejo-client
+    namespace: crossplane-system
+  providerConfigRef:
+    name: sso-hnatekmar-xyz
+  forProvider:
+    realmId: master
+    clientId: forgejo-prod
+    name: Forgejo
+    accessType: CONFIDENTIAL
+    clientAuthenticatorType: client-secret
+    enabled: true
+    standardFlowEnabled: true
+    directAccessGrantsEnabled: false   # no password grant: humans log in through the browser flow
+    serviceAccountsEnabled: false      # Forgejo does not call Keycloak's admin API with this client
+    useRefreshTokens: true
+    fullScopeAllowed: true
+    baseUrl: https://forgejo.srv.hnatekmar.dev
+    validRedirectUris:
+      - https://forgejo.srv.hnatekmar.dev/user/oauth2/keycloak/callback
+    webOrigins:
+      - https://forgejo.srv.hnatekmar.dev
