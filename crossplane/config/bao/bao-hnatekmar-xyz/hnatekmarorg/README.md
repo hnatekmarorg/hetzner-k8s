@@ -18,5 +18,8 @@ and `ssh/classes/{infra,dev}/{mount,ca,role-admin}.yaml` for the class engines.
 
 Note: `cidrList` on a `key_type: ca` role does nothing — the OpenBao API documents
 `cidr_list` as *"Not applicable for CA type"*. The class roles pin the estate's nets through
-`defaultCriticalOptions.source-address` instead; the older `ssh/*-role.yaml` files still
-carry the inert field.
+`defaultCriticalOptions.source-address` instead.
+
+Keep `ttl`, `maxTtl`, and `notBeforeDuration` in seconds (`86400`, not `24h`). The API
+returns seconds, and provider v2.2.2 does not normalize duration strings. A duration
+string therefore causes a permanent diff and a hot reconcile loop against OpenBao.
