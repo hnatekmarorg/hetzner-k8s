@@ -3,4 +3,6 @@ kind: Provider
 metadata:
   name: upbound-provider-vault
 spec:
+  # v2.2.2 does not normalize duration strings against the API's seconds.
+  # Keep SSH role TTLs in seconds with this provider version.
   package: xpkg.upbound.io/upbound/provider-vault:v2.2.2

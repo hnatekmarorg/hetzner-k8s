@@ -10,10 +10,14 @@ spec:
     backend: hnatekmarorg-ssh
     keyType: "ca"
     defaultUser: "root"
-    cidrList: "0.0.0.0/0"
+    # cidrList is not applicable to CA-type roles. The API drops it, and
+    # provider v2.2.2 then retries the update forever. The estate nets belong
+    # in defaultCriticalOptions.source-address when this role needs a pin.
     allowedUsers: "*"
-    ttl: "24h"
-    maxTtl: "168h"  # 7 days max (allows 1-week renewal window)
+    # Keep TTLs in seconds. The API returns seconds and provider v2.2.2 does
+    # not normalize duration strings, so "24h" causes a permanent diff.
+    ttl: "86400"
+    maxTtl: "604800"
     allowUserCertificates: true
     allowedExtensions: "permit-pty"
     defaultExtensions:

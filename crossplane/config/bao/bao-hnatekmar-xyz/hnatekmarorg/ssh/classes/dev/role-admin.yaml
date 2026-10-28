@@ -19,8 +19,10 @@ spec:
     # nets are pinned as the certificate's `source-address` critical option instead.
     defaultCriticalOptions:
       source-address: "172.16.0.0/20,172.16.16.0/20,172.16.32.0/19,172.16.64.0/20,172.16.96.0/20,172.16.100.0/24,192.168.88.0/24,88.198.65.246/32"
-    ttl: "24h"
-    maxTtl: "168h"
+    # Keep TTLs in seconds. The API returns seconds and provider v2.2.2 does
+    # not normalize duration strings, so "24h" causes a permanent diff.
+    ttl: "86400"
+    maxTtl: "604800"
     allowHostCertificates: false
     allowUserCertificates: true
     allowUserKeyIds: true
@@ -29,6 +31,7 @@ spec:
       permit-port-forwarding: ""
       permit-pty: ""
       permit-X11-forwarding: ""
-    notBeforeDuration: "30s"
+    # The API returns this as seconds; keep it in seconds to avoid a diff.
+    notBeforeDuration: "30"
   providerConfigRef:
     name: bao-hnatekmar-xyz
