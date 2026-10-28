@@ -24,7 +24,11 @@ server:
       - host: bao.hnatekmar.xyz
   image:
     repository: openbao/openbao
-    tag: "latest"
+    # Pin the patch release. "latest" hid the 2.6.1 lease-cache bug in this
+    # deployment. 2.6.5 is the latest 2.6.x patch and includes the fix.
+    # Roll this out only after the leaked token store is cleaned: a restart
+    # restores the current 225 GiB database.
+    tag: "2.6.5"
     pullPolicy: IfNotPresent
   dataStorage:
     storageClass: "local-path"

@@ -210,46 +210,10 @@ kubectl get secret -n crossplane-system | grep -E 'digitalocean|github'
 kubectl get application crossplane-secrets -n argocd
 ```
 
-### Quick Recovery Script
+### Rebuild Runbook
 
-A recovery script is provided at `scripts/recover-bao-secrets.sh`:
-
-```bash
-# Make it executable
-chmod +x scripts/recover-bao-secrets.sh
-
-# Set your root token
-export BAO_TOKEN=s.<your-root-token>
-
-# Run the script
-./scripts/recover-bao-secrets.sh
-```
-
-The script will:
-- Check for existing secrets
-- Prompt for required tokens
-- Create missing secrets with random passwords where appropriate
-- Verify synchronization status
-
-Or run manually:
-```bash
-# Quick script to restore essential secrets after OpenBao reinit
-
-# Set variables
-BAO_ADDR=https://bao.hnatekmar.xyz
-BAO_TOKEN=<root-token>
-
-# Create required secrets
-bao kv put clusters/admin/keycloak username=keycloak password=$(openssl rand -base64 32 | tr -d '/+')
-bao kv put clusters/digitalocean token=<digitalocean-api-token>
-bao kv put algovectra/github token=<github-algovectra-token>
-bao kv put devops/github token=<github-hnatekmarorg-token>
-
-# Verify
-sleep 10
-kubectl get externalsecret -A | grep -v "False\|Error"
-echo "\nCheck ArgoCD: kubectl get application crossplane-secrets -n argocd"
-```
+See [OpenBao Rebuild Runbook](docs/workflows/openbao-rebuild.md) for the full rebuild
+procedure, including token-store cleanup and the SSH CA rotation.
 
 ### Troubleshooting
 
@@ -274,6 +238,7 @@ If secrets are not syncing:
 ### Related Documentation
 
 - [OpenBao Configuration Guide](docs/crossplane/openbao.md)
+- [OpenBao Rebuild Runbook](docs/workflows/openbao-rebuild.md)
 - [Keycloak Configuration Guide](docs/crossplane/keycloak.md)
 - [SSO Overview](docs/crossplane/sso-overview.md) - Cross-service SSO reference (OpenBao, ArgoCD, Keycloak)
 - [SSO Integration Guide](docs/crossplane/sso-integration.md)
