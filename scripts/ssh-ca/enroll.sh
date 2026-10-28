@@ -30,6 +30,8 @@
 #   bash enroll.sh dev                    # container/CI: this machine gets a dev cert
 #   enroll.sh --class infra trust         # balteus trusts the infra CA only
 #   enroll.sh --class infra trust --no-reload
+#   enroll.sh --class infra trust --previous-ca old-infra-ca.pub
+#                                         # trust the old and new infra CA during rotation
 #   bash enroll.sh dev issue --dry-run    # print the changes, write nothing
 #   bash enroll.sh --check-hash           # verify this file against its published sha256
 #
@@ -68,6 +70,7 @@ COMMAND=""
 DRY_RUN=0
 NO_RELOAD=0
 CHECK_HASH=0
+PREVIOUS_CA_FILE=""
 
 # ------------------------------------------------------------------------------ helpers
 
@@ -75,7 +78,7 @@ log()  { printf '%s\n' "$*" >&2; }
 die()  { printf 'error: %s\n' "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
-usage() { sed -n '3,45p' "$SCRIPT_PATH" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
+usage() { sed -n '3,48p' "$SCRIPT_PATH" | sed 's/^# \{0,1\}//'; exit "${1:-0}"; }
 
 run() {
   if [[ "$DRY_RUN" == 1 ]]; then
@@ -254,6 +257,8 @@ while [[ $# -gt 0 ]]; do
     --tier)      TIER="${2:-}"; shift 2 ;;
     --tier=*)    TIER="${1#*=}"; shift ;;
     --no-reload) NO_RELOAD=1; shift ;;
+    --previous-ca) PREVIOUS_CA_FILE="${2:-}"; shift 2 ;;
+    --previous-ca=*) PREVIOUS_CA_FILE="${1#*=}"; shift ;;
     --dry-run|-n) DRY_RUN=1; shift ;;
     --check-hash) CHECK_HASH=1; shift ;;
     --help|-h)   usage 0 ;;
@@ -398,13 +403,36 @@ cmd_trust() {
     printf '%s\n' "$pub" | write_file_if_changed "$CA_FILE" 0644
   fi
 
+  local old_ca_line=""
+  if [[ -n "$PREVIOUS_CA_FILE" ]]; then
+    [[ -f "$PREVIOUS_CA_FILE" ]] || die "previous CA file not found: $PREVIOUS_CA_FILE"
+    local old_pub
+    old_pub="$(head -1 "$PREVIOUS_CA_FILE")"
+    [[ "$old_pub" == ssh-* ]] || die "previous CA file does not start with an ssh public key: $PREVIOUS_CA_FILE"
+    if [[ "$DRY_RUN" == 1 ]]; then
+      log "  [dry-run] would trust the previous CA from $PREVIOUS_CA_FILE"
+    else
+      printf '%s\n' "$old_pub" | write_file_if_changed "${CA_FILE}.old" 0644
+    fi
+    old_ca_line="TrustedUserCAKeys ${CA_FILE}.old"
+  elif [[ -f "${CA_FILE}.old" ]]; then
+    if [[ "$DRY_RUN" == 1 ]]; then
+      log "  [dry-run] would retire the previous CA ${CA_FILE}.old"
+    else
+      rm -f "${CA_FILE}.old"
+    fi
+  fi
+
+  local ca_lines="TrustedUserCAKeys ${CA_FILE}"
+  [[ -n "$old_ca_line" ]] && ca_lines+=$'\n'"${old_ca_line}"
+
   log "installing sshd certificate-auth config"
   write_file_if_changed "$SSHD_DROPIN" 0644 <<EOF
 # Managed by scripts/ssh-ca/enroll.sh (hetzner-k8s) — class: ${CLASS}
 #
 # The class lives in this key: this host trusts the ${CLASS} CA and no other CA, so a
 # ${OTHER_CLASS}-class certificate is not refused by policy here — it does not verify at all.
-TrustedUserCAKeys ${CA_FILE}
+${ca_lines}
 #
 # Tier gate. OpenBao issues class certificates with principals = [${TIER}], so a login is
 # accepted only if the target unix user's principals file lists ${TIER}. Deleting these
@@ -461,6 +489,10 @@ cmd_verify() {
     log "  ok      trust anchor present: ${CA_FILE} ($(ssh-keygen -lf "$CA_FILE" | awk '{print $2}'))"
   elif [[ "$(id -u)" == 0 ]]; then
     log "  note    no host trust anchor at ${CA_FILE} (this machine is a client only)"
+  fi
+
+  if [[ -f "${CA_FILE}.old" ]]; then
+    log "  note    previous ${CLASS} CA also trusted: ${CA_FILE}.old (rotation window)"
   fi
 
   if have sshd && [[ "$(id -u)" == 0 ]]; then
