@@ -93,6 +93,10 @@ This repository manages Kubernetes infrastructure using:
 │   │   ├── functions/               # Crossplane functions (kcl, auto-ready)
 │   │   └── providers/               # Provider installations (digitalocean, helm, keycloak, kubernetes, vault)
 │   └── secrets/                     # Secret definitions
+├── rbac/                            # ClusterRoleBindings for Keycloak SSO groups (class: infra)
+├── scripts/                         # Operational scripts
+│   ├── kubeconfig/                  # SSO kubeconfig generation + API server OIDC preflight
+│   └── ssh-ca/                      # SSH certificate enrollment
 ├── docs/                            # Documentation
 │   ├── crossplane/                  # Crossplane-specific docs
 │   │   ├── external-secrets.md
@@ -101,6 +105,7 @@ This repository manages Kubernetes infrastructure using:
 │   │   ├── openbao.md
 │   │   ├── provider-configs.md
 │   │   └── sso-integration.md
+│   ├── kubeconfig-sso.md            # kubectl access via Keycloak (RBAC, k3s flags, generator)
 │   └── workflows/                   # Workflow documentation
 │       ├── adding-project-sso.md
 │       └── troubleshooting.md
@@ -403,6 +408,19 @@ export VAULT_ADDR=https://bao.hnatekmar.xyz
 ### Adding Project SSO
 
 See [docs/workflows/adding-project-sso.md](docs/workflows/adding-project-sso.md) for complete instructions.
+
+### Granting a Human kubectl Access
+
+Access comes from a Keycloak realm role, not from a certificate:
+
+1. Assign `k8s-infra-viewer` or `k8s-infra-admin` to the user (or to a group, through the group's
+   existing `Roles` resource — those are `exhaustive`).
+2. Generate the credential-free kubeconfig: `./scripts/kubeconfig/sso-kubeconfig.sh --from ~/.kube/hetzner`.
+3. Verify: `kubectl --kubeconfig ~/.kube/hetzner-sso.yaml auth whoami` must show an `sso:k8s-*` group.
+
+The API server's `oidc-*` flags (k3s, out of band) and the RBAC bindings are covered in
+[docs/kubeconfig-sso.md](docs/kubeconfig-sso.md). Check the cluster side with
+`./scripts/kubeconfig/verify-oidc.sh`.
 
 ## Troubleshooting
 

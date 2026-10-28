@@ -1,0 +1,62 @@
+# Kubernetes access for this cluster.
+#
+# THIS CLUSTER IS THE `infra` CLASS. It hosts Keycloak, OpenBao, ArgoCD and everything that
+# depends on them, so it must keep working; that is the definition of the class (see
+# docs/crossplane/sso-overview.md). Only the infra pair is bound here on purpose — a holder of
+# `k8s-dev-admin`, which is meant to let someone break a sandbox freely, gets nothing on this
+# cluster. The isolation is structural rather than documented: the other pair is simply absent.
+#
+# Both bindings use built-in ClusterRoles (`view`, `cluster-admin`). No custom role to audit, no
+# rules that silently drift from what Kubernetes ships.
+#
+# The subjects are the `sso:`-prefixed realm-role names. The prefix exists because kube-apiserver
+# runs with `oidc-groups-prefix=sso:` (see docs/kubeconfig-sso.md for the k3s args), and it is not
+# cosmetic: without a prefix a Keycloak role named `system:masters` would land verbatim in the token
+# and Kubernetes would honour it as cluster-admin.
+#
+# The roles themselves are created in Keycloak — crossplane/config/keycloak/roles/k8s-*.yaml — and
+# attached to a group in crossplane/config/keycloak/roles/hnatekmarorg-admin-realm-mapping.yaml.
+# This directory only says what those names MEAN here.
+#
+# WHY THIS IS APPLIED FIRST (sync-wave -1 in argocd/rbac.yaml). A binding depends on nothing, and it
+# is the object that lets a human fix everything else. Mounted behind cert-manager/ESO/Crossplane, a
+# failed earlier wave would leave a cluster that authenticates its administrator and authorises
+# nothing — recoverable only with the cluster's own admin kubeconfig. First wave makes the failure
+# mode "a component is missing" instead of "nobody can get in".
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sso-k8s-infra-viewer
+  labels:
+    app.kubernetes.io/part-of: cluster-access
+    cluster-access/class: infra
+    cluster-access/tier: viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  # Built-in. Read-only, and deliberately not `cluster-admin`-adjacent: it cannot read Secrets.
+  name: view
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: "sso:k8s-infra-viewer"
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sso-k8s-infra-admin
+  labels:
+    app.kubernetes.io/part-of: cluster-access
+    cluster-access/class: infra
+    cluster-access/tier: admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  # Built-in. Full control, including RBAC — which is the point: the admin tier must be able to
+  # repair the cluster's own access path.
+  name: cluster-admin
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: "sso:k8s-infra-admin"
