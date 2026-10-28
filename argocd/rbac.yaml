@@ -1,0 +1,34 @@
+# Applies rbac/ — this cluster's Kubernetes access bindings for Keycloak-issued identities.
+#
+# A separate Application rather than another file under argocd/ because the resources are
+# cluster-scoped and belong to no component: the app-of-apps (argocd/init.yaml) applies THIS
+# object, and this object owns the bindings. Keeping the manifests out of argocd/ also keeps them
+# from being applied twice, since init recurses that whole directory.
+#
+# Wave -1: see the header of rbac/cluster-access.yaml for why access must not sit behind anything.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cluster-access
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/hnatekmarorg/hetzner-k8s.git
+    targetRevision: HEAD
+    path: rbac
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    # Every object in rbac/ is cluster-scoped, so this namespace is never used. It is required by
+    # the Application schema, not by the manifests.
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true

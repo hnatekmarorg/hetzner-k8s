@@ -98,9 +98,24 @@ static pod, siderolabs/talos#14394.)
 
 Bindings therefore name the role with the prefix: `sso:k8s-dev-admin`, `sso:k8s-infra-viewer`.
 
-Manifests: `crossplane/config/keycloak/roles/k8s-*.yaml`. Assignment is either direct or via a
-group -> role mapping (`group.keycloak.crossplane.io/v1alpha1` `Roles`), if group-based membership
-management is preferred.
+The two halves live in different places, and both are required:
+
+| Half | Manifests | Notes |
+|------|-----------|-------|
+| Keycloak | `crossplane/config/keycloak/roles/k8s-*.yaml` | realm roles; assigned to `hnatekmarorg-admin` in `hnatekmarorg-admin-realm-mapping.yaml` |
+| Kubernetes | `rbac/cluster-access.yaml` (applied by `argocd/rbac.yaml`, wave -1) | ClusterRoleBindings for **this** cluster's class |
+
+This Hetzner cluster is the `infra` class — it hosts Keycloak, OpenBao and ArgoCD — so it binds
+`sso:k8s-infra-viewer` → `view` and `sso:k8s-infra-admin` → `cluster-admin`, and a `k8s-dev-admin`
+holder gets nothing here.
+
+Assignment is either direct (assign the realm role to a user) or via a group → role mapping
+(`group.keycloak.crossplane.io/v1alpha1` `Roles`). A group mapping is `exhaustive: true`, so the k8s
+role must be added to the group's **existing** `Roles` resource rather than a second one.
+
+The client-side half — kubeconfig generation, the API server's k3s flags, and verification — is in
+[docs/kubeconfig-sso.md](../kubeconfig-sso.md). Generate a kubeconfig with
+`scripts/kubeconfig/sso-kubeconfig.sh`.
 
 ## OpenBao Access Levels
 

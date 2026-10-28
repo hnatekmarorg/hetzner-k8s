@@ -12,6 +12,7 @@ This repository manages Kubernetes infrastructure on Hetzner Cloud using GitOps 
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) - Guidelines for AI coding agents
+- [docs/kubeconfig-sso.md](docs/kubeconfig-sso.md) - `kubectl` access over Keycloak SSO: RBAC, k3s OIDC flags, kubeconfig generator
 - [docs/](docs/) - Detailed documentation for workflows and configurations
 
 ## OpenBao Login Roles

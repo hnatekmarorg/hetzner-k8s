@@ -1,6 +1,16 @@
 ---
-# Map hnatekmarorg-admin group to the realm role
-# Users in this group will automatically get the hnatekmarorg-admin realm role
+# Map hnatekmarorg-admin group to its realm roles
+# Users in this group will automatically get the hnatekmarorg-admin and k8s-infra-admin realm roles
+#
+# WHY BOTH ARE IN ONE RESOURCE. `exhaustive: true` declares the group's realm-role list COMPLETE:
+# the provider removes anything not named here. A second Roles resource for the same group would
+# also claim completeness, so the two would keep deleting each other's grant. One resource owns the
+# list; a new grant is a line added below.
+#
+# k8s-infra-admin is the cluster-admin tier on the `infra` class of Kubernetes clusters (this
+# Hetzner cluster among them) and is bound by rbac/cluster-access.yaml. It is granted to the same
+# group that already holds ArgoCD and Keycloak admin: cluster-admin is not a smaller privilege than
+# either, so splitting them would only make the access path harder to reason about.
 apiVersion: group.keycloak.crossplane.io/v1alpha1
 kind: Roles
 metadata:
@@ -18,4 +28,5 @@ spec:
     realmId: master
     roleIdsRefs:
       - name: hnatekmarorg-admin-realm-role
+      - name: k8s-infra-admin
     exhaustive: true
