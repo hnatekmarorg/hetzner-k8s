@@ -1,0 +1,12 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendCA
+metadata:
+  name: kiseki-ssh-ca
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Retain
+  forProvider:
+    backend: kiseki-ssh
+    generateSigningKey: true
+  providerConfigRef:
+    name: bao-hnatekmar-xyz

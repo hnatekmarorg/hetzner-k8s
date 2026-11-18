@@ -1,0 +1,21 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Policy
+metadata:
+  name: kiseki-ssh-signer
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
+  forProvider:
+    name: kiseki-ssh-signer
+    policy: |
+      # Mint a short-lived certificate for a kiseki environment.
+      #
+      # Deliberately narrow: signing only. No read on the mount, no write on
+      # the role, no sys access — a stolen signer token can issue a 30-minute
+      # credential for a principal that still has to exist in a running pod,
+      # and nothing else.
+      path "kiseki-ssh/sign/kiseki-dev" {
+        capabilities = ["create", "update"]
+      }

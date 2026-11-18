@@ -1,0 +1,13 @@
+apiVersion: vault.vault.upbound.io/v1alpha1
+kind: Mount
+metadata:
+  name: kiseki-ssh
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    path: kiseki-ssh
+    type: ssh
+    description: "SSH CA for kiseki dev environments — certs for shared access, not keys"
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
