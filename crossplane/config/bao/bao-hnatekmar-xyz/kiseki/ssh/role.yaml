@@ -1,0 +1,27 @@
+apiVersion: ssh.vault.upbound.io/v1alpha1
+kind: SecretBackendRole
+metadata:
+  name: kiseki-ssh-dev
+  namespace: crossplane-system
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: "kiseki-dev"
+    backend: kiseki-ssh
+    keyType: "ca"
+    defaultUser: "root"
+    cidrList: "0.0.0.0/0"
+    allowedUsers: "*"
+    # Short-lived by design. A kiseki environment exists for hours, the cert
+    # should not outlive the work: 30 minutes by default, two hours maximum.
+    # (The algovectra role next door issues 720h certs; that is a different
+    # access model and not a precedent for this one.)
+    ttl: "30m"
+    maxTtl: "2h"
+    allowUserCertificates: true
+    allowedExtensions: "permit-pty,permit-agent-forwarding"
+    defaultExtensions:
+      "permit-pty": ""
+      "permit-agent-forwarding": ""
+  providerConfigRef:
+    name: bao-hnatekmar-xyz
